@@ -1,0 +1,19 @@
+<?php
+
+session_start();
+include("functions.inc.php");
+
+$regid=$_GET["regid"];
+$attdid=$_GET["attdid"];
+$mid=$_GET["mid"];
+include("entity/TryRegister.php");
+include("entity/ClassArrange.php");
+
+
+TryRegister::cancelRegister($regid);
+TryRegister::addCancelReason($attdid, $mid,"管理员帮团购会员取消");
+ClassArrange::minusArrangeCount($attdid);
+
+header("Location:msg.php?m=update_success_manage_attend");
+
+?>

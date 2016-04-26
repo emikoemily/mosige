@@ -1,0 +1,73 @@
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1" charset="utf8">  
+<meta http-equiv="content-type" content="text/html;charset=utf8">
+<style type="text/css" media="all">@import "style.css";</style>
+<style type="text/css" media="all">@import "common.css";</style>
+ <title>mosige管理系统</title>
+</head>
+<body>
+	 <div id="header">  <a href="./" title="主页"><img src="logo.jpg" alt="主页" /></a>  <h1 class="site-name title"><a href="./">mosige管理系统</a></h1></div>
+	 
+	 <?php date_default_timezone_set('PRC');  ?>
+
+<?php
+include("entity/Arrange.php");
+	//$memlist=getMemberByTime($time);
+	
+	
+	//$packagebymem=Array($memid=>Array($package));
+
+$time="12:00:00";
+$day="weekend";
+$mems=Arrange::listMemberbyoption($time,$day);
+//var_dump($mems);
+$memcount=Array();
+$memname=Array();
+
+foreach($mems as $mem ){
+	echo "</br>";
+	//echo $mem['member_id'];
+	//echo $mem['member_name'];
+	$packages=Arrange::listPackagebymem($mem['member_id']);
+	foreach($packages as $package){
+			//echo " 课包:".$package['package_name'];
+		//echo $package['package_id'];
+			
+		$a=Arrange::findjumped($mem['member_id'] ,$package['package_id']);
+		$level=(count($a)==0)?0:current($a);
+		if(count($a)==0 ){//count($a)==0 or
+			//echo current($a)." 排过了";or Arrange::ifarranged($package['package_id'], $level)
+		}
+		else{
+			//	$memcount[$package['package_name']."-".current($a)]++;
+			//array_push($memname[$package['package_name'."-".current($a)]],$mem['member_name']);
+			$memname[$package['package_name']."-".current($a)][]=$mem['member_name'];
+			//echo " 该上:";
+			//echo  current($a);
+			//echo "统计".$memcount[$package['package_name']."-".current($a)];
+		}
+			
+			
+	}
+}
+	echo "几点".$time."gongzuori?".$day;
+	arsort($memcount);
+	echo "总结";
+	echo "课程包";
+	 
+	arsort($memname);
+	foreach ($memname as $k=>$v)
+	{
+		echo '<br><br>该上的级别:' . $k ."<br>".count($v). '人<br>' ;
+		foreach ($v as $k1=>$v1)
+		{
+			echo $v1.",";
+	
+		}
+	
+	
+	}
+	
+?>

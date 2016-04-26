@@ -1,0 +1,433 @@
+<html>
+<head>
+ <title>Mosige 签到表</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<style type="text/css" media="all">@import "style.css";</style>
+<style type="text/css" media="all">@import "common.css";</style>
+<script src="jquery/jquery-1.11.3.min.js">
+</script>
+</head>
+<body>
+<script>
+function GetDateStr(AddDayCount)
+{
+var dd = new Date();
+dd.setDate(dd.getDate()+AddDayCount);//获取AddDayCount天后的日期
+var y = dd.getYear();
+var m = dd.getMonth()+1;//获取当前月份的日期
+var d = dd.getDate();
+return y+"-"+m+"-"+d;
+} 
+$tom= GetDateStr(1);
+$(document).ready(function(){
+$("#tomorrow").click(function(){
+
+$("#enddate").text($tom);
+  //$("#startdate").val($tom);
+  //$("#enddate").val($tom);
+});
+});
+</script>
+<?php
+	
+	session_start();
+	if(!$_SESSION["adminuserid"]) header("Location:index.php");
+	//include("header.inc.php");
+	include("dbconnect.inc.php");
+	
+	//echo $_GET["name"];
+	$check_date=date('Y-m-d');
+	$check_time="";
+	$check_membername="";
+	if($_GET["checkdate"] != "") {
+		//$name = addslashes($_GET["name"]);
+	$check_date= $_GET['checkdate'];
+	}
+	else{
+		$check_date= date('Y-m-d');
+	}
+	if($_GET["checkdate_end"] != "") {
+		//$name = addslashes($_GET["name"]);
+		$check_date_end= $_GET['checkdate_end'];
+	}
+	else{
+		$check_date_end= date('Y-m-d');
+	}
+	if($_GET["checktime"] != "") {
+		//$tel = addslashes($_GET["tel"]);
+		$check_time= "AND class_arrange.starttime = "."'{$_GET['checktime']}'";
+	}
+	else{
+		
+		//$check_time="12:00:00";
+	}
+	if($_GET["membername"] != "") {
+		//$tel = addslashes($_GET["tel"]);
+		$check_membername= " AND member_name like '%{$_GET['membername']}%'";
+	}
+	else{
+	
+		//$check_time="12:00:00";
+	}
+
+   $sql = "SELECT member_name,member_level,member_cardid,register_record.member_id,register_id,class_name,inner_id,class_type,arrangedate,teacher_name,
+       starttime,endtime,register_record.arrange_id,is_attended,is_canceled,reviewed,class_description,class_design.package_id,rule_name
+	   FROM class_arrange left JOIN register_record
+on register_record.arrange_id= class_arrange.arrange_id 
+      inner JOIN class_design on class_design.class_id = class_arrange.class_id 
+inner JOIN teacher_table on class_arrange.teacher_id = teacher_table.teacher_id
+left
+JOIN member_user on  member_user.member_id=register_record.member_id 
+where register_record.is_canceled=0 AND class_arrange.arrangedate >='{$check_date}' AND class_arrange.arrangedate <='{$check_date_end}' {$check_time} {$check_membername} ORDER BY arrangedate,starttime,class_name,class_type";
+	//	if($_SESSION["adminuserid"]=="1" ) {echo "".$sql;}
+ //echo $sql;
+	$db->query('set names UTF8');
+	$res = $db->query($sql);
+	
+	 $sqltry = "SELECT member_name,member_level,member_cell,try_register_record.member_id,member_intro,register_id,class_name,inner_id,class_type,arrangedate,teacher_name,
+       starttime,endtime,try_register_record.arrange_id,is_attended,is_canceled,reviewed,class_description,class_design.package_id,is_storeguest,guest_name
+	   FROM class_arrange left JOIN try_register_record
+on try_register_record.arrange_id= class_arrange.arrange_id 
+      inner JOIN class_design on class_design.class_id = class_arrange.class_id 
+inner JOIN teacher_table on class_arrange.teacher_id = teacher_table.teacher_id
+left
+JOIN try_member_user on  try_member_user.member_id=try_register_record.member_id 
+where try_register_record.is_canceled=0 AND class_arrange.arrangedate >='{$check_date}'  AND class_arrange.arrangedate <='{$check_date_end}' {$check_time} {$check_membername} ORDER BY arrangedate,starttime,class_type,class_name";
+	//if($_SESSION["adminuserid"]=="1" ) {echo "asdf".$sql;}
+//echo  "   ".$sqltry;
+	$db->query('set names UTF8');
+	$restry = $db->query($sqltry);
+?>
+
+
+<form action="manage_attend.php"  method="get" >
+<div><div class="container-inline"><div class="form-item">
+ <label >选择日期时间:(都空着为查询当天) </label><br />
+
+开课日期 起始：<input id="startdate" type="date" name="checkdate"   value="<?php echo $_GET["checkdate"]; ?>" /><br /><br />
+
+开课日期 截止：<input id="enddate"  type="date" name="checkdate_end"  value="<?php echo $_GET["checkdate_end"]; ?>" /><br /><br />
+上课时间：<!--<input type="text" name="checktime"  value="<?php echo $row['starttime']; ?>" /><br />-->
+
+ <button id="tomorrow">明天(测试)</button><p id="test1">这是测试段落。</p>
+<select name='checktime'  value=""/>
+       <option value=''>all</option>
+		 <option value='8:30:00'>8:30:00</option>
+		<option value='10:30:00'>10:30:00</option>
+		<option value='12:00:00'>12:00:00</option>
+		<option value='15:00:00'>15:00:00</option>
+		<option value='17:30:00'>17:30:00</option>
+		<option value='17:45:00'>17:45:00</option>
+		<option value='18:00:00'>18:00:00</option>
+		<option value='18:15:00'>18:15:00</option>
+		<option value='18:30:00'>18:30:00</option>
+		<option value='18:45:00'>18:45:00</option>
+		<option value='18:50:00'>18:50:00</option>
+		<option value='19:00:00'>19:00:00</option>
+		<option value='19:15:00'>19:15:00</option>
+		<option value='19:30:00'>19:30:00</option>
+		<option value='19:45:00'>19:45:00</option>
+		<option value='20:00:00'>20:00:00</option>
+		<option value='20:15:00'>20:15:00</option>
+	 
+ 
+	 
+		</select></br></br>
+		
+		
+会员名称:<input type="text" name="membername"  value="<?php echo $row['member_name']; ?>" />
+<input type="submit" value="检    索"  class="form-submit" />
+
+ 
+<?php
+echo "</br></br><h1><b>";
+ echo $check_date;
+ echo "</b></h1>    ";
+ 
+//echo $check_time;
+function export_csv($filename,$data)   
+{   header("Content-type:text/csv");   
+    header("Content-Disposition:attachment;filename=".$filename);   
+    header('Cache-Control:must-revalidate,post-check=0,pre-check=0');   
+    header('Expires:0');   
+    header('Pragma:public');   
+   // echo $data;   
+}
+?>
+
+</div>
+</div></form>
+<table>
+ <thead><tr>
+  <th >上课时间</th>
+  
+ <th>课程名</th>
+
+ <th >约课会员名</th>
+   
+ <th >签到</th>
+  
+
+ <th >操作</th>
+ <th>教师操作</th>
+  <th>教师操作</th></tr>
+ </thead>
+<tbody>
+<?php
+$res->setFetchMode(PDO::FETCH_ASSOC);
+	 $rows=$res->fetchAll();
+	foreach($rows as $row) {
+		switch($row['class_type']) {
+			case	"package"	:
+				$level = "课程包类";
+				break;
+			case	"common"	:
+				$level = "习练课类";
+				break;
+			case	"set":
+				$level = "单项课程类";
+				break;
+			
+			default		:
+				$level = "未设定";
+				break;
+		}
+		$attstate=0;
+		//echo $row['is_attended']; 
+		if(strlen($row['is_attended']) == 4){
+			if(substr($row['is_attended'],3,1)!=0){
+				$attstate=3;
+			}
+			else{
+				$attstate=2;
+			}
+			
+		}
+		else{
+			if(substr($row['is_attended'],0,1)!=0){
+				$attstate=1;
+			}
+			else{
+				$attstate=0;
+			}
+		}
+		//echo $attstate;
+		switch($attstate) {
+			case	"0"	:
+				$att = " ";
+				break;
+			case	"1"	:
+				$att = "会员手机签到";
+				break;
+			case	"2":
+				$att = "后台已签到";
+				break;
+			case	"3":
+				$att = "会员手机已签到，后台已签到";
+				break;
+			default		:
+				$att = "未设定";
+				break;
+		}
+		switch($row['rule_name']) {
+			case	"common"	:
+				$ml = "习练年卡会员";
+				break;
+			
+			case	"common_count"	:
+				$ml = "习练次卡会员";
+				break;
+			case	"common_count_both"	:
+					$ml = "习练次卡会员 含空中";
+					break;
+			case	"package"	:
+				$ml = "课程卡会员";
+				break;
+			case	"both_c1y":
+				$ml = "vip";
+				break;
+			case	"common_1":
+				$ml = "年卡";
+					break;
+					case	"common_half":
+						$ml = "半年卡";
+						break;
+			case	"both_weekend":
+					$ml = "周末卡";
+					break;
+			case	"both_month":
+						$ml = "月卡";
+						break;			
+						
+			case	"both_quarter":
+					$ml = "季卡";
+					break;
+			case	"both_count":
+				$ml = "体验券";
+				break;
+			
+			default		:
+				$ml = "";
+				break;
+		}
+		 
+		echo "<tr >";
+		
+		echo "<td><b>{$row['arrangedate']}</b>&nbsp {$row['starttime']}</td>";
+		//echo "<td></td>";
+		echo "<td><a href='view_packagesubscribe.php?pid={$row['package_id']}' target='_blank'><b>{$row['class_name']}</b></a>-<b>{$row['inner_id']}</b>-{$row['class_description']}-({$level})";
+		if($_SESSION["user_id"]=="2"  ) {echo "arrid:(".$row['arrange_id']." ) packageid:(".$row['package_id']." )"; };	
+		echo "</td>";
+		//echo "<td></td>";
+		echo "<td>{$row['member_cardid']}  <b><a href=http://yoga.ibreezee.com/memadmin/member_class.php?id={$row['member_id']} target='blank'>{$row['member_name']}</a>";
+		
+		if($_SESSION["user_id"]=="2"  ) {echo "memid:(".$row['member_id']." )"; };	
+		
+		echo "</b> ({$ml})</td>";
+		// echo "<td></td>";
+		  echo "<td>{$att}</td>";
+		// echo "<td></td>";
+	
+//echo "<td>{$row['member_name']}</td>";
+		// echo "<td></td>";		 
+		if($_SESSION["adminuserid"]=="1" or $_SESSION["adminuserid"]=="2"  or $_SESSION["adminuserid"]=="4" ) {
+		echo "<td><a href='do_qiandao.inc.php?regid={$row['register_id']}&pid={$row['package_id']}&ctype={$row['class_type']}&innerid={$row['inner_id']}&mid={$row['member_id']}'>签到</a><br />
+			</td>
+			<td><a href='do_quxiao.inc.php?regid={$row['register_id']}&attdid={$row['arrange_id']}&mid={$row['member_id']}' onclick=\"return confirm('请确认取消？');\">取消预约</a><br /></td> ";
+			 
+			//<a  href='#' onclick='return doDel(\"{$row['username']}\",{$row['member_id']});'>删除</a>
+		}
+		if($_SESSION["adminuserid"]=="1" or $_SESSION["adminuserid"]=="3") {
+			echo "<td><a href='teacherreview.php?regid={$row['register_id']}' target='blank'>老师评语</a></td>";
+			echo "<td><a href='edit_teacherreview.php?regid={$row['register_id']}' target='blank'>查看评语</a></td> </tr>";
+		}    
+		else {
+			echo "<td><a href='detail.php?id={$row['member_id']}'>查看</a></td>";
+		}
+    echo " </tr>";
+	
+	
+	
+	
+	
+	$str = "time,class,member\n";   
+    $str = iconv('gb2312','utf-8',$str);   
+
+		 $classname = iconv('gb2312','utf-8',$row['class_name']);
+		 $starttime= iconv('gb2312','utf-8',$row['starttime']);
+		 $memname =  iconv('gb2312','utf-8',$row['member_name']);
+		 $str .= $starttime.",".$classname.",".$memname."\n"; //用引文逗号分开   
+	 }	
+	 echo "<tr><td>----</td><td>----</td><td>----</td><td>----</td><td>----</td><td>----</td><td>----</td></tr>";
+	 $restry->setFetchMode(PDO::FETCH_ASSOC);
+	 $rowtrys=$restry->fetchAll();
+		foreach($rowtrys as $rowtry) {
+		switch($rowtry['class_type']) {
+			case	"package"	:
+				$level = "课程包类";
+				break;
+			case	"common"	:
+				$level = "习练课类";
+				break;
+			case	"set":
+				$level = "单项课程类";
+				break;
+			
+			default		:
+				$level = "未设定";
+				break;
+		}
+		$attstate=0;
+		echo $rowtry['is_attended']; 
+		if(strlen($rowtry['is_attended']) == 4){
+			if(substr($rowtry['is_attended'],3,1)!=0){
+				$attstate=3;
+			}
+			else{
+				$attstate=2;
+			}
+			
+		}
+		else{
+			if(substr($rowtry['is_attended'],0,1)!=0){
+				$attstate=1;
+			}
+			else{
+				$attstate=0;
+			}
+		}
+		echo $attstate;
+		switch($attstate) {
+			case	"0"	:
+				$att = " ";
+				break;
+			case	"1"	:
+				$att = "课时过了自动签到";
+				break;
+			 
+			default		:
+				$att = "未设定";
+				break;
+		}
+		switch($rowtry['member_level']) {
+			case	"both"	:
+				$ml = "团购周卡";
+				break;
+			
+			case	"common_count"	:
+				$ml = "团购1次卡";
+				break;
+			case	"package"	:
+				$ml = "团购儿童or空中1次";
+				break;
+			case	"tiyan_1"	:
+				$ml = "体验1次";
+				break;
+			case	"tiyan_2"	:
+				$ml = "体验2次";
+				break;
+			case	"tiyan_3"	:
+				$ml = "10.31体验3次";
+				break;
+			default		:
+				$ml = "";
+				break;
+		}
+		if($rowtry['is_storeguest']==1){$ml="门店临时预约";}
+		echo "<tr >";
+		
+		echo "<td>{$rowtry['arrangedate']} &nbsp{$rowtry['starttime']}</td>";
+		//echo "<td></td>";
+		echo "<td><b>{$rowtry['class_name']}</b>-<b>{$rowtry['inner_id']}</b>-{$rowtry['class_description']}-({$level})</td>";
+		//echo "<td></td>";
+		echo "<td>{$rowtry['member_id']} <b>{$rowtry['member_name']}{$rowtry['guest_name']}({$rowtry['member_cell']})</b>({$ml}){$rowtry['member_intro']}</td>";
+		// echo "<td></td>";
+		  echo "<td>{$att}</td>";
+		// echo "<td></td>";
+		 
+		// echo "<td></td>";		 
+		if($_SESSION["adminuserid"]=="1" or $_SESSION["adminuserid"]=="2"  or $_SESSION["adminuserid"]=="4" ) {
+		  
+		echo "<td><a href='do_quxiao_try.inc.php?regid={$rowtry['register_id']}&attdid={$rowtry['arrange_id']}&mid={$rowtry['member_id']}' onclick=\"return confirm('请确认取消？');\">取消预约</a><br /></td> ";
+			 
+			
+		}
+		 echo "<td></td>";
+ 
+		}
+?>
+</tbody></table>
+
+
+<?php
+	if(mysqli_num_rows($res)==0) echo "没有检索到相关的用户";
+	
+	
+?>
+<!-- end content -->
+   </td>
+  </tr>
+ </table>
+
+ </body>
+</html>

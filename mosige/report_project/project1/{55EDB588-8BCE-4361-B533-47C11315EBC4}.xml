@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<configuration date="2015/12/14" author="e.World Technology Ltd.">
+<project id="{55EDB588-8BCE-4361-B533-47C11315EBC4}" file="C:\Users\zz\Documents\PHPReportMaker\Projects\project1.prp" name="project1" product="PHPReportMaker" version="9.0" datetime="2015/12/14 19:37:46" languagefolder="phprptlang" userlevel="-2,&quot;Anonymous&quot;,0;">
+<table id="apply_leave" name="apply_leave" caption="apply leave" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="class_arrange" name="class_arrange" caption="class arrange" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="class_design" name="class_design" caption="class design" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="member_review" name="member_review" caption="member review" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="member_user" name="member_user" caption="member user" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="package_design" name="package_design" caption="package design" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="package_subscribe" name="package_subscribe" caption="package subscribe" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="payment_table" name="payment_table" caption="payment table" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="register_record" name="register_record" caption="register record" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="running_arrange" name="running_arrange" caption="running arrange" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="try_cancel_register" name="try_cancel_register" caption="try cancel register" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="try_member_user" name="try_member_user" caption="try member user" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="try_package_subscribe" name="try_package_subscribe" caption="try package subscribe" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="try_register_record" name="try_register_record" caption="try register record" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="users" name="users" caption="users" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="view1" name="view1" caption="view 1" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="Report1" name="Report1" caption="Report 1" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="CTREPORT1" name="CTREPORT1" caption="CTREPORT1" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+</project></configuration>

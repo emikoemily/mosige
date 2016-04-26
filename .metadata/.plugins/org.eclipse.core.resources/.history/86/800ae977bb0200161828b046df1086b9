@@ -1,0 +1,20 @@
+<?php
+include (entity/Package.php);
+
+if($_GET){
+	$mid=$_GET["mid"];
+	$pid=$_GET["pid"];
+	echo $mid;
+	echo $pid;
+	//Package::addpackageMAX(1,"set5",73);
+echo "hello";
+print_r(error_get_last());
+	print_r(debug_backtrace());
+
+}else{
+	
+	echo "big";
+}
+//header("Location:member_class.php?id={$mid}");
+
+?>

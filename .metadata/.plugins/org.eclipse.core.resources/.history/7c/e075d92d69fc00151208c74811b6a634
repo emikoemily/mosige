@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Insert title here</title>
+<style>
+      .container{
+          display:-webkit-box;
+          display:-moz-box;
+     }
+     div:not(.container){
+         -webkit-border-radius:5px;
+         -moz-border-radius:5px;
+         border-radius:5px;
+         background:#999;
+         border:#00C 2px solid;
+     }
+     
+     #left,#right{
+         width:200px;
+         -webkit-box-sizing:border-box;
+         -moz-box-sizing:border-box;
+         padding:60px;
+     }
+     #middle{
+         padding:20px;
+         -webkit-box-flex:1;
+         -moz-box-flex:1;
+         -webkit-box-ordinal-group:2;
+         -moz-box-ordinal-group:2;
+         margin:0 5px;
+     }
+     #right{
+         -webkit-box-ordinal-group:2;
+         -moz-box-ordinal-group:2;
+     }
+ </style>
+</head>
+<body>
+<section>
+ <div class="container">
+
+<div>
+  <iframe src="arrange_logic.php?time=10%3A30%3A00&day=working" ></iframe>
+</div>
+<div>
+  <iframe src="arrange_logic.php?time=12%3A00%3A00&day=working" ></iframe>
+  </div>
+  <div>
+  <iframe src="arrange_logic.php?time=17%3A30%3A00&day=working" ></iframe>
+ </div>
+ 
+ </div>
+</section>
+</body>
+</html>

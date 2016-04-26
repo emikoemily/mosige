@@ -1,0 +1,582 @@
+<?php 
+session_start();
+$code = mt_rand(0,1000000);
+$_SESSION['code'] = $code;
+	if(!$_SESSION["usercell"]) 
+   {
+	   header("location:do_login.php");
+  }
+  
+  include("entity/Reviews.php");
+  // if($_SESSION["usercell"]=='13810532905' or $_SESSION["usercell"]=='15811593069' or $_SESSION["usercell"]=='13581873973'){  
+    
+    $notreview=Reviews::getUnfinishedCount($_SESSION['userid']);	
+	if($notreview>0){
+	header("location:attendhistory.php");
+	}
+//}
+   
+  
+  
+	include("header.inc.php");
+	include("dbconf/settings.inc.php");
+	include("dbconf/dbconnect.inc.php");
+	include("entity/Investigation.php");
+	
+?>
+
+
+<?php
+$disable=0;
+$overcount=0;
+$leave=0;
+$isdisplayeveryone_set4=1;
+$isdisplayeveryone_set5=1;
+$now=date('H:i:s');
+$sqlbase="SELECT DISTINCT arrange_id ,arrangedate,class_arrange.class_id,class_design.class_id,class_design.class_suitename,
+		class_name,teacher_name,starttime,endtime,class_description,maxposition,registercount,class_design.package_id,class_type,classroom,overlap,inner_id
+		FROM class_arrange 
+		INNER JOIN class_design ON class_design.class_id = class_arrange.class_id 
+		INNER JOIN teacher_table ON class_arrange.teacher_id = teacher_table.teacher_id 
+		WHERE  
+		(class_design.class_type ='common' )
+	    AND";
+ 
+		
+		
+$sqlpackagebase="SELECT DISTINCT arrange_id ,arrangedate,class_arrange.class_id,class_design.class_id, class_name,class_description, 
+		teacher_name,starttime,endtime,class_description,maxposition,registercount,class_design.package_id,class_type,
+		package_attended,package_subscribe.package_enddate,package_course_count,payment_enddate,classroom,overlap,set_max
+		FROM class_arrange 
+		INNER JOIN class_design ON class_design.class_id = class_arrange.class_id  
+		INNER JOIN teacher_table ON class_arrange.teacher_id = teacher_table.teacher_id 
+		INNER JOIN package_subscribe ON class_design.package_id = package_subscribe.package_id 
+		INNER JOIN package_design ON class_design.package_id=package_design.package_id 
+		INNER JOIN payment_table ON package_subscribe.payment_id=payment_table.payment_id
+		WHERE  package_subscribe.member_id = '{$_SESSION['userid']}' 
+		AND package_subscribe.is_finished!=1 
+		AND";
+
+$sqlevery="SELECT DISTINCT arrange_id ,arrangedate,class_arrange.class_id,class_design.class_id, class_name,class_description,
+teacher_name,starttime,endtime,class_description,maxposition,registercount,class_design.package_id,class_type,classroom,overlap
+FROM class_arrange
+INNER JOIN class_design ON class_design.class_id = class_arrange.class_id
+INNER JOIN teacher_table ON class_arrange.teacher_id = teacher_table.teacher_id
+INNER JOIN package_design ON class_design.package_id=package_design.package_id
+WHERE 
+
+ ";
+
+if($_SESSION['overend']==1  or $_SESSION['isleave']==1 OR $_SESSION["tiyanover"]==1)
+{
+	$disable=1;
+}
+if($_SESSION['count_overmax']==1){
+	$overcount=1;
+}
+
+?>
+
+<body>
+<div data-role="page" id="chooseclass" data-title="预约课程">
+<div data-role="header">
+<?php 
+	//include("entity/Reviews.php");
+	//$notreview=Reviews::getUnfinishedCount($_SESSION['userid']);
+	
+/*	if($notreview>0){
+	
+		//echo "<marquee direction='left' behavior='alternate' scrollamount='2' scrolldelay='30'> <img src='img/laba.gif' width='38' height='48'><font size=+1 color=white>你还有 {$notreview}个课没有评价哟~</font></marquee>";
+		//echo "<marquee direction='left' behavior='alternate' scrollamount='2' scrolldelay='30'> <img src='img/laba.gif' width='38' height='48'><font size=+1 color=white>亲爱的同学们，本周六由于老师集体外出学习，课程于下午2点开始，具体请关注当日课表哦！</font></marquee>";
+		//echo "<img src='img/laba.gif' width='38' height='48'>春节期间瑜伽馆2月1日-2月14日放假 ， 2月15日开课";
+		//echo "<img src='img/laba.gif' width='38' height='48'>大厦1层新设门禁需登记进入或从商场5层电梯来馆";
+		
+	}
+	else{
+		//echo "<img src='img/laba.gif' width='38' height='48'>春节期间瑜伽馆2月1日-2月14日放假 ， 2月15日开课";
+		//echo "<img src='img/laba.gif' width='38' height='48'>大厦1层新设门禁需登记进入或从商场5层电梯来馆";
+		//echo "<marquee direction='left' behavior='alternate' scrollamount='2' scrolldelay='30'> <img src='img/laba.gif' width='38' height='48'><font size=+1 color=white>亲爱的同学们，本周六由于老师集体外出学习，课程于下午2点开始，具体请关注当日课表哦！</font></marquee>";
+	
+	}*/
+echo "莫圣见证着你一天天的改变";
+?>
+      
+<div data-role="navbar">
+    <ul>
+      <li><a href="#"  data-transition="flip" data-ajax="false" class="ui-btn-active ui-state-persist" >约课</a></li>
+      <li><a href="registered.php"  data-ajax="false"  >已选</a></li>
+      <li><a href="attendhistory.php" data-transition="flip" data-ajax="false">评价</a></li>
+	  <li><a href="registerrm.php" data-transition="flip" data-ajax="false">跑步机</a></li>
+	  <li><a href="memberinfo.php" data-transition="flip" data-ajax="false" data-prefetch="true">个人</a></li>
+    </ul>
+  </div>
+
+</div>
+
+<?php 
+if($_SESSION["userrule"]=="both_c1y" or $_SESSION["userrule"]=="package"){
+	if(!Investigation::ismemdone($_SESSION['userid'])){
+			
+		echo "<img src='img/laba2.gif' width='38' height='48'>选择课程包的小伙伴请填一下 ";
+		echo "<a href='investigation.php' data-role='button' data-ajax='false' data-inline='true'>调查问卷</a>";
+			
+	}
+}
+?>
+
+<form method ='post' action='chooseclass.php' >
+<div data-role="collapsible" >
+  
+<?php
+
+ 
+
+
+	$attendedclass=array();
+	$today=date('Y-m-d');
+	$tomorrow=date("Y-m-d",strtotime("+1 day"));
+	$aftertomorrow= date("Y-m-d",strtotime("+2 day"));
+	
+	function totalregcount($db,$arrangedate,$starttime,$classroom){
+			if($classroom==NULL OR $classroom=="")
+			{$classroom=1;
+			}
+			$sqltc="SELECT SUM(try_registercount)+SUM(registercount) as total FROM `class_arrange` where arrangedate='{$arrangedate}' and starttime='{$starttime}' and classroom={$classroom}";
+			//echo $sqltc;
+			$restc=$db->query($sqltc);
+			$restc->setFetchMode(PDO::FETCH_ASSOC);
+			
+			$rowtc=$restc->fetch();	
+			return $rowtc['total'];
+			 
+		}
+		
+	function checkbothclass($pack,$common){
+		if(in_array($pack,$common)){
+			
+			return TRUE;
+		}
+		
+		return FALSE;
+	}	
+	
+	function getAttendedclass($db){
+		
+		$sqlattended="SELECT DISTINCT class_arrange.class_id
+		FROM class_arrange
+		inner join yoga_lu.register_record ON register_record.arrange_id = class_arrange.arrange_id
+		inner join class_design ON class_design.class_id=class_arrange.class_id
+		where
+		is_attended!=0
+		AND
+		register_record.register_time>='{$_SESSION['start_date']}'
+		AND
+		register_record.member_id={$_SESSION['userid']}";
+		//echo $sqlattended;
+		$resattend=$db->query($sqlattended);
+		$resattend->setFetchMode(PDO::FETCH_ASSOC);
+		$rows = $resattend->fetchAll();
+		$arr_attended=array();
+		foreach($rows as $rowsattend){
+				
+			$arr_attended[]=$rowsattend["class_id"];
+		}
+			return $arr_attended;
+	} 
+	if($_SESSION["hasextended"]==1){
+		
+		$attendedclass=getAttendedclass($db);
+	}
+	
+ 
+	function checkifattended($classid){
+		global $attendedclass;
+		return in_array($classid,$attendedclass);
+		 
+	}
+	
+	
+	function checkweekend($datetocheck){
+		 
+		$a = date("w",strtotime($datetocheck));
+		 
+		if($a =="0" || $a=="6")
+		 { 
+		 	return true;
+		 }
+		else{ 
+			return false; 
+		}
+	}
+	
+	function checkdateByLevel($level,$datetocheck){
+		if($level=="both_weekend"){
+			
+			return checkweekend($datetocheck);
+			
+		}else{
+			
+			return true;
+		} 
+		
+	}
+	
+	function draw_packagetable($db,$res,$disable){
+		$res->setFetchMode(PDO::FETCH_ASSOC);
+		$rows = $res->fetchAll();
+	   foreach($rows as $row) {	
+ 
+				if($row['class_type']=='set' & $row['set_max']-$row['package_attended']<=0){
+					 
+					continue;
+					 
+					} 
+				elseif($row['package_id']=='set4'  & $row['set_max']-$row['package_attended']>0  ){
+					
+					//$isdisplayeveryone=$isdisplayeveryone."or (class_design.package_id='set4')";
+					$isdisplayeveryone_set4=0;
+					
+					
+				}
+				elseif($row['package_id']=='set5'  & $row['set_max']-$row['package_attended']>0  ){
+						
+					$isdisplayeveryone_set5=0;					
+						
+						
+				}
+			 	if($_SESSION["hasextended"]==1 && checkifattended($row['class_id'])){
+			 		
+			 		continue;
+			 	}
+	            else{
+	            	
+				$availeble=$row['maxposition']-$row['registercount'];
+				echo "<input  type='radio'  name='classchoice' id='checkbox-{$row['arrange_id']}' value={$row['arrange_id']}>";
+				echo "<label for='checkbox-{$row['arrange_id']}'>  {$row['starttime']} - {$row['endtime']}  </label>";
+	
+				echo "<script>checkavailable({$availeble},'checkbox-{$row['arrange_id']}');</script>";
+				 
+				echo "<script>checkdisable({$disable},'checkbox-{$row['arrange_id']}');</script>";
+				 
+				echo "<ul data-role='listview' data-inset='false'>";
+				 
+				echo "<li data-inset='false'><img src=img/{$row['package_id']}.png ><b>{$row['class_name']} {$row['class_description']}</b> </br> {$row['teacher_name']} 教室：{$row['classroom']}  </br>已预约：". totalregcount($db,$row['arrangedate'],$row['starttime'],$row['classroom']).  "  空位： {$availeble}  </li>";
+				 
+				echo "</ul>";
+				
+				echo "<input type='hidden'  name='classpid-{$row['arrange_id']}' id='pid-{$row['arrange_id']}' value={$row['package_id']}>";
+				echo "<input type='hidden'  name='classpcount-{$row['arrange_id']}' id='pcount-{$row['arrange_id']}' value={$row['package_course_count']}>";
+				echo "<input type='hidden'  name='classtype-{$row['arrange_id']}' id='type-{$row['arrange_id']}' value={$row['class_type']}>";
+				echo "<input type='hidden'  name='overlap-{$row['arrange_id']}' id='overlap-{$row['arrange_id']}' value={$row['overlap']}>";
+				
+			 
+				}
+				 
+			} 
+	   
+        }
+		
+		function draw_commontable($db,$res1,$disable,$overcount,$arr_packageid_ref){
+			$res1->setFetchMode(PDO::FETCH_ASSOC);
+			$rows = $res1->fetchAll();
+			foreach($rows as $row1) {		
+			 //echo $row1['package_id'];
+				if($_SESSION['userlevel']=='both' AND checkbothclass($row1['package_id'],$arr_packageid_ref)){
+					
+					continue;
+					}
+				else{
+				//echo  $row1['package_id'];
+				$availeble=$row1['maxposition']-$row1['registercount'];
+				
+                echo "<input  type='radio'  name='classchoice' id='checkbox-{$row1['arrange_id']}' value={$row1['arrange_id']}>";
+				
+				echo "<label for='checkbox-{$row1['arrange_id']}'>    {$row1['starttime']} - {$row1['endtime']}  </label>";
+				echo "<script>checkavailable({$availeble},'checkbox-{$row1['arrange_id']}');</script>";
+				echo "<script>checkdisable({$disable},'checkbox-{$row1['arrange_id']}');</script>";
+				echo "<script>checkdisable({$overcount},'checkbox-{$row1['arrange_id']}');</script>"; 
+				echo "<ul data-role='listview' data-inset='false'>";
+				echo "<li data-inset='false'><img src=img/{$row1['package_id']}.png ><b>{$row1['class_name']}</b>";
+				if($_SESSION["userid"]==373 or $_SESSION["userid"]==73){echo "L".$row1['inner_id'];};
+				echo " {$row1['teacher_name']}   教室：{$row1['classroom']}  </br>已预约：".totalregcount($db,$row1['arrangedate'],$row1['starttime'],$row1['classroom'])."   空位： {$availeble} </br></li>";
+				echo "</ul>";
+				echo "<input type='hidden'  name='classpid-{$row1['arrange_id']}' id='pid-{$row1['arrange_id']}' value={$row1['package_id']}>";
+				//echo "<input type='hidden'  name='classpcount-{$row1['arrange_id']}' id='pcount-{$row1['arrange_id']}' value={$row1['package_course_count']}>";
+				echo "<input type='hidden'  name='classtype-{$row1['arrange_id']}' id='type-{$row1['arrange_id']}' value={$row1['class_type']}>";
+				echo "<input type='hidden'  name='overlap-{$row1['arrange_id']}' id='overlap-{$row1['arrange_id']}' value={$row1['overlap']}>";		
+					}
+			}
+			
+		}
+		
+		
+		
+		function draw_everyone($db,$sqlevery){
+			$db->query('set names UTF8');		
+			
+			$where=" (";
+			if($isdisplayeveryone_set4==1){
+				$where=$where." or class_design.package_id='set4'";
+				
+			}
+			if($isdisplayeveryone_set5==1){
+				$where=$where." or class_design.package_id='set5'";
+			
+			}
+			
+				
+				$where="class_design.package_id='set4' or class_design.package_id='set5'" ;e
+				
+			
+			$where=$where.")";
+			$sqlevery=$sqlevery.$where;
+			echo $isdisplayeveryone_set4;
+		 
+			echo $isdisplayeveryone_set5;
+			echo $sqlevery;
+			$resevery = $db->query($sqlevery);
+			$resevery->setFetchMode(PDO::FETCH_ASSOC);
+			$rows = $resevery->fetchAll();
+			foreach($rows as $row1) {				
+		
+					echo "<label>  {$row1['starttime']} - {$row1['endtime']}  </label>";						
+					echo "<ul data-role='listview' data-inset='false'>";
+					echo "<li data-inset='false'><img src=img/{$row1['package_id']}.png ><b>{$row1['class_name']}</b>";
+					
+					echo " {$row1['teacher_name']}   教室：{$row1['classroom']}  </br>  </br></li>";
+					echo "</ul>";
+					
+				}
+			}
+				
+		
+		
+		
+		function generateSQLbyType($type,$day){
+			
+			return $sql;
+		}
+		
+
+	$arr_packageid = unserialize($_SESSION['packagesarray_s']);
+	
+	
+	
+/*--------------------------- Start to show view -----------------------------------*/
+
+	
+	echo "<h1>点击查看今天的课表 ".$today."</h1>";
+    echo "<p>";
+
+	$sqlenable=0;
+	$sql1enable=0;
+	
+	if(substr($_SESSION['userlevel'],0,6)=='common'){
+		$sql1 = $sqlbase." (arrangedate = \"".$today."\") AND (class_arrange.starttime>'{$now}')ORDER BY endtime;";
+		$sql1enable=1;
+	
+		
+	}
+	elseif(substr($_SESSION['userlevel'],0,7)=='package'){
+		$sql= $sqlpackagebase." (arrangedate = \"".$today."\") AND (class_arrange.starttime>'{$now}' )AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00' or payment_enddate >= \"".date('Y-m-d')."\") ORDER BY endtime;";
+		$sqlenable=1;
+		//echo $sql;
+	}
+	
+	elseif(substr($_SESSION['userlevel'],0,4)=='both'){//sql:package not check  sql1:common
+		$sql= $sqlpackagebase." (arrangedate = \"".$today."\") AND (class_arrange.starttime>'{$now}') AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00'  or payment_enddate >= \"".date('Y-m-d')."\")  ORDER BY endtime;";
+		//$sqlenable=1;
+		//echo $sql;
+		$sql1=$sqlbase." (arrangedate = \"".$today."\") AND  (class_arrange.starttime>'{$now}')  ORDER BY endtime;";
+		//$sql1enable=1;
+		//echo sql1;
+		if($_SESSION['userlevel']=='both_weekend' and !checkweekend($today)){
+			$sqlenable=0;
+			$sql1enable=0;
+		}
+		elseif($_SESSION["hasextended"]==1){
+			$sqlenable=1;
+			$sql1enable=0;
+		}
+		else{
+			$sqlenable=1;
+			$sql1enable=1;
+		}
+		
+	}
+	
+
+	else{
+		
+		echo "欢迎";
+		
+	}
+
+	$db->query('set names UTF8');
+	
+ if($sqlenable==1  ){	
+	$res = $db->query($sql);	
+	echo "课程卡 单项卡课表:";
+	echo "	<fieldset data-role='controlgroup'>";
+    draw_packagetable($db,$res,$disable);
+	echo   "</fieldset>"; 
+ }
+ 
+
+ if($sql1enable==1){
+	$res1 = $db->query($sql1);
+   echo "习练卡课表:";
+    echo " <fieldset data-role='controlgroup'>";
+    draw_commontable($db,$res1,$disable,$overcount,$arr_packageid);
+    echo "</fieldset>";	 
+ }
+ 
+?>       
+</p>
+</div>
+<?php
+
+echo "<div data-role='collapsible'>";
+echo   "<h1>点击查看明天的课表 ".$tomorrow."</h1>";
+echo   "<p>";
+ 	
+	   
+	if(substr($_SESSION['userlevel'],0,6)=='common'){
+		$sqlming1 = $sqlbase." (arrangedate = \"".$tomorrow."\") ORDER BY endtime;";	
+		$sql1enable=1;
+		
+		 
+	}
+	elseif(substr($_SESSION['userlevel'],0,7)=='package'){
+		$sqlming= $sqlpackagebase." (arrangedate = \"".$tomorrow."\") AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00' or payment_enddate >= \"".date("Y-m-d",strtotime("+1 day"))."\") ORDER BY endtime;";
+		$sqlenable=1;
+	}
+	
+	elseif(substr($_SESSION['userlevel'],0,4)=='both'){//sql:package not check  sql1:common
+		$sqlming= $sqlpackagebase." (arrangedate = \"".$tomorrow."\") AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00' or payment_enddate >= \"".date("Y-m-d",strtotime("+1 day"))."\") ORDER BY endtime;";
+		//$sqlenable=1;
+		$sqlming1=$sqlbase." (arrangedate = \"".$tomorrow."\") ORDER BY endtime;";
+		//$sql1enable=1;
+		if($_SESSION['userlevel']=='both_weekend' and !checkweekend($tomorrow)){
+			$sqlenable=0;
+			$sql1enable=0;
+		}
+		elseif($_SESSION["hasextended"]==1){
+			$sqlenable=1;
+			$sql1enable=0;
+		}
+		else{
+			$sqlenable=1;
+			$sql1enable=1;
+		}
+	}
+	
+	else{
+		
+		echo "欢迎";
+		
+	}
+
+
+	if($sqlenable==1){	
+	$resming = $db->query($sqlming);
+ 
+	echo "课程卡 单项卡课表:";
+ 
+	echo "	<fieldset data-role='controlgroup'>";
+	draw_packagetable($db,$resming,$disable); 
+	echo   "</fieldset>"; 
+ }
+ 
+
+ if($sql1enable==1){
+		$resming1 = $db->query($sqlming1);
+	
+   echo "习练卡课表:";
+
+   echo " <fieldset data-role='controlgroup'>";
+	
+			draw_commontable($db,$resming1,$disable,$overcount,$arr_packageid); 
+	echo "</fieldset>";	 
+ }	
+
+?>
+</p>
+</div>
+<div data-role="collapsible">
+ <?php 
+
+ 
+ echo " <h1>点击查看后天的课表 ".$aftertomorrow."</h1>";
+ echo " <p>";
+
+ 		   
+		if(substr($_SESSION['userlevel'],0,6)=='common'){
+		$sqlhou1 = $sqlbase." (arrangedate = \"".$aftertomorrow."\") ORDER BY endtime;";	
+		$sql1enable=1;
+	}
+	elseif(substr($_SESSION['userlevel'],0,7)=='package'){
+		$sqlhou= $sqlpackagebase." (arrangedate = \"".$aftertomorrow."\") AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00' or payment_enddate >= \"".date("Y-m-d",strtotime("+2 day"))."\") ORDER BY endtime;";
+		$sqlenable=1;
+	}
+	
+	elseif(substr($_SESSION['userlevel'],0,4)=='both'){//sql:package not check  sql1:common
+		$sqlhou= $sqlpackagebase." (arrangedate = \"".$aftertomorrow."\") AND (payment_enddate is NULL or payment_enddate ='0000-00-00 00:00:00' or payment_enddate >= \"".date("Y-m-d",strtotime("+2 day"))."\") ORDER BY endtime;";
+		$sqlhou1=$sqlbase." (arrangedate = \"".$aftertomorrow."\");";
+		
+		if($_SESSION['userlevel']=='both_weekend' and !checkweekend($aftertomorrow)){
+			
+			$sqlenable=0;
+			$sql1enable=0;
+		}
+		elseif($_SESSION["hasextended"]==1){
+			$sqlenable=1;
+			$sql1enable=0;
+		}
+		else{
+			//echo "test1";
+			$sqlenable=1;
+			$sql1enable=1;
+		}
+	}
+ 
+	else{
+		
+		echo "欢迎";
+		
+	}
+	//echo $sqlhou;
+
+	if($sqlenable==1){	
+		$reshou = $db->query($sqlhou);
+		echo "课程卡 单项卡课表:";
+		echo "	<fieldset data-role='controlgroup'>";
+		draw_packagetable($db,$reshou,$disable);
+		echo   "</fieldset>"; 
+ }
+ 
+
+ if($sql1enable==1){
+		$reshou1 = $db->query($sqlhou1);
+		echo "习练卡课表:";
+		echo " <fieldset data-role='controlgroup'>";
+		draw_commontable($db,$reshou1,$disable,$overcount,$arr_packageid);
+		echo "</fieldset>";	 
+ }
+ 
+ 
+ 
+ draw_everyone($db,$sqlevery);
+?> 
+ 
+</p>
+
+</div>  
+
+		<input type="hidden" name="originator" value="<?=$code?>">
+	<input type='submit' value='提交' data-inline="false" onclick="checkavailable()" /> 
+        </form>
+  <div data-role="footer" data-position="fixed">Copyright 2015 MoSige Yoga.</div>  
+
+</body>
+</html> 

@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1" charset="utf-8">  
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+
+<link rel="stylesheet" type="text/css" href="main.css" />
+<style type="text/css">
+
+.egg ul li{z-index:999;}
+.eggList{padding-top:110px;position:relative;width:660px;}
+.eggList li{float:left;background:url(images/egg_1.png) no-repeat bottom;width:269px;height:318px;cursor:pointer;position:relative;margin-left:-230px;}
+.eggList li span{position:absolute; width:30px; height:60px; left:68px; top:64px; color:#ff0; font-size:42px; font-weight:bold}
+.eggList li.curr{background:url(images/egg_2.png) no-repeat bottom;width:269px;height:318px;cursor:default;z-index:300;}
+.eggList li.curr sup{position:absolute;background:url(images/img-4.png) no-repeat;width:410px; height:256px;top:-30px;left:-60px;z-index:800;}
+.hammer{background:url(images/img-6.png) no-repeat;width:143px;height:169px;position:absolute; text-indent:-9999px;z-index:150;left:10px;top:20px;}
+.resultTip{position:absolute; background:#ffc ;width:160px;padding:6px;z-index:500;top:200px; left:-100px; color:#f60; text-align:center;overflow:hidden;display:none;z-index:500;}
+.resultTip b{font-size:16px;line-height:29px;}
+</style>
+</head>
+
+<body>
+<div id="header">
+  
+   
+</div>
+<div id="main">
+  	
+	<div class="egg">
+		<ul class="eggList" align="center">
+			<p class="hammer" id="hammer" >锤子</p>
+			<p class="resultTip" id="resultTip"><b id="result"></b></p>
+			 
+			<li align="center"><sup></sup></li>
+			 
+		</ul>
+	</div>
+ <br/>
+</div>
+<script type="text/javascript" src="js/my.js"></script>
+ 
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(function(){ 
+ 
+	$('<audio id="chatAudio"><source src="test.mp3" type="audio/mpeg"></audio>').appendTo('body');
+ 
+});
+function eggClick(obj) {
+	var _this = obj;	
+	$.getJSON("data.php",function(res){
+		if(_this.hasClass("curr")){
+			alert("已经中奖啦，不要太贪心哦~");
+			return false;
+		}
+		//_this.unbind('click');
+		$(".hammer").css({"top":_this.position().top-25,"left":_this.position().left+225});
+		$(".hammer").animate({
+			"top":_this.position().top-25,
+			"left":_this.position().left+225
+			},30,function(){
+				_this.addClass("curr"); //蛋碎效果
+				_this.find("sup").show(); //金花四溅			
+				$('#chatAudio')[0].play(); //播放声音 
+				$(".hammer").hide();
+				$("#result").empty();
+				$('.resultTip').css({display:'block',top:'110px',left:_this.position().left-15,opacity:0}).animate({top: '60px',opacity:1},300,function(){
+					if(res.msg==1){
+						$("#result").html("恭喜，您砸中"+res.prize+"!");
+					}else{
+						$("#result").html("很遗憾,您没能中奖!");
+					}
+				});	
+			}
+		);
+		
+		 
+		
+	});
+	
+}
+
+
+$(".eggList li").click(function() {
+	$(this).children("span").hide();
+	eggClick($(this));
+});
+
+$(".eggList li").hover(function() {
+	var posL = $(this).position().left + $(this).width();
+	$("#hammer").show().css('left', posL);
+})
+
+
+
+
+</script>
+
+</body>
+</html>

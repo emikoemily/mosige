@@ -1,0 +1,387 @@
+<?php
+	
+	session_start();
+	if(!$_SESSION["adminuserid"]) header("Location:index.php");
+	include("header.inc.php");
+	include("dbconnect.inc.php");
+	include("entity/Member.php");
+	$page=isset($_GET['page'])?intval($_GET['page']):1;        //这句就是获取page=18中的page的值，假如不存在page，那么页数就是1。  
+	$num=80;                                      //每页显示10条数据  
+
+	//echo $_GET["name"];
+	if($_GET["name"] != "") {
+		$name = addslashes($_GET["name"]);
+		$where .= " and member_name like '%{$name}%' ";
+	}
+	if($_GET["tel"] != "") {
+		$tel = addslashes($_GET["tel"]);
+		$where .= " and member_cell like '%{$tel}%' ";
+	}
+	//echo $_GET["type"];
+	
+	if($_GET["type"] != "") {
+		
+		$type = $_GET["type"];
+		//echo "a".$type[0]."b";
+	if($type[0]!=""){
+		$where .="AND ( rule_name ='asdf' ";
+		foreach($type as $v){
+		//echo "筛选类型：".$v." ";
+		$where .= " or rule_name = '{$v}' ";
+		}
+		$where .=")";
+		}
+	}
+	$sql_all = "select * from member_user where 1 {$where}";
+	$res_all = $db->query($sql_all);
+	$res_all->setFetchMode(PDO::FETCH_ASSOC);
+	$rows = $res_all->fetchAll();
+	$total=count($rows); //查询数据的总数  
+    $pagenum=ceil($total/$num); 
+	 
+	
+	//假如传入的页数参数大于总页数，则显示错误信息  
+	If($page>$pagenum){  
+		   Echo "Error : Can Not Found The page .";  
+		   Exit;  
+	}  
+
+	$offset=($page-1)*$num;
+	if($offset<0){$offset=0;}
+	
+	$sql = "select * from member_user where 1 {$where}  limit $offset,$num";
+	//echo $sql;
+	$db->query('set names UTF8');
+	$res = $db->query($sql);
+	//$info=$db->query($sql);   //获取相应页数所需要显示的数据  
+	//While($it=mysqli_fetch_array($info)){  
+	//	   Echo $it['name']."<br />";  
+	//}                                                              //显示数据  
+echo "<font size=+3> 每页显示80条。当前页:{$page} 页数：";
+$current;
+	For($i=1;$i<=$pagenum;$i++){  
+		   
+		   $show=($i!=$page)?"<a href='view_account.php?page=".$i."'>$i   </a>":"<b>$i</b>";  
+		   Echo $show." ";  
+	}
+	echo "</font>";
+?>
+ <table id="content">
+  <tr>
+   <td id="sidebar-left"><div class="block block-user" id="block-user-1">
+  <h2 class="title"><?php echo $_SESSION["username"]; ?></h2>
+ <div class="content">
+<ul class="menu">
+<li class="leaf"><a href="account.php" class="active">会员管理</a></li>
+<li class="leaf"><a href="manage_attend.php"  target="_blank" target="_blank">签到表</a></li>
+<?php
+if($_SESSION["adminuserid"]=="1" ) {
+echo "<li class='leaf'><a href='view_review.php' >数据统计</a></li>";
+echo "<li class='leaf'><a href='register.php' class='active'>注册后台用户</a></li>";
+
+}
+?>
+<li class="leaf"><a href="logout.php">注销登录</a></li>
+
+</ul>
+</div>
+</div>
+</td>
+   <td id="main">
+<div class="breadcrumb"><a href="./">主页</a> &raquo; <a href="./">用户帐号</a></div><h2><?php echo $_SESSION["username"]; ?></h2><ul class="tabs primary">
+
+<?php
+   if($_SESSION["adminuserid"]=="1") {//1:admin 2:frontdesk 3:teacher
+	   
+echo "<li ><a href='add_account.php'>注册新会员</a></li>";   
+echo "<li class='active'><a href='view_account.php'  class='active'>查看会员信息</a></li>";
+echo "<li ><a href='manage_class.php'>课程管理</a></li>";
+echo "<li ><a href='manage_leave.php'>请假管理</a></li>";
+echo "<li  ><a href='manage_attend.php'  target='blank'>签到表</a></li>";
+echo "<li ><a href='manage_export.php'>导入导出</a></li>";
+echo "<li ><a href='member_class.php'>会员上课情况</a></li>";
+echo "<li ><a href='manage_rm.php'>跑步机管理</a></li>";
+
+	   
+   }elseif($_SESSION["adminuserid"]=="2"){
+	   
+	echo	"<li ><a href='add_account.php'>注册新会员</a></li>";   
+echo "<li class='active'><a href='view_account.php'  class='active'>查看会员信息</a></li>";
+echo "<li ><a href='manage_class.php'>课程管理</a></li>";
+echo "<li ><a href='manage_leave.php'>请假管理</a></li>";
+echo "<li  ><a href='manage_attend.php'  target='blank'>签到表</a></li>";
+echo "<li ><a href='member_class.php'>会员上课情况</a></li>";
+echo "<li ><a href='manage_rm.php'>跑步机管理</a></li>";   
+   }
+   elseif($_SESSION["adminuserid"]=="3"){
+
+echo "<li ><a href='manage_class.php'>课程管理</a></li>"; 
+echo "<li  ><a href='manage_attend.php'  target='blank'>签到表</a></li>";
+echo "<li ><a href='manage_export.php'>导入导出</a></li>";
+ 	   
+	   
+   }
+ elseif($_SESSION["adminuserid"]=="4"){
+    	echo	"<li  ><a href='add_account.php'>注册新会员</a></li>";
+   	echo "<li class='active'><a href='view_account.php'>查看会员信息</a></li>";
+echo "<li ><a href='manage_class.php'>课程管理</a></li>"; 
+echo "<li  ><a href='manage_attend.php'  target='blank'>签到表</a></li>";
+ 	   
+	   
+   }
+?>
+
+ 
+</ul>
+<h2><a href="view_try.php">点此查看团购会员</a></h2>
+<!-- begin content -->
+<script language="javascript">
+	function doDel(title,id) {
+		if(confirm('你确定要删除用户？\n-------------------------\n'+title+'\n-------------------------'))
+			location.href='del_account.php?id='+id;
+	}</script>
+<form action="view_account.php"  method="get" >
+</script>
+<div><div class="container-inline"><div class="form-item">
+ <label >检索用户: </label>
+用户名模糊搜索：<input type="text" name="name"  value="<?php echo $_GET['member_name']; ?>" /><br />
+手机模糊搜索：<input type="text" name="tel"  value="<?php echo $_GET['member_cell']; ?>" /><br />
+按会员卡类型检索：
+<select name="type[]"  multiple="multiple"> 
+<option value="package" <?php if($_GET['type'] == 'package'){echo 'selected="selected"';} ?>>课程卡或单项卡</option> 
+<option value="common_1" <?php if($_GET['type'] == 'common_1'){echo 'selected="selected"';} ?>>习练卡年卡</option> 
+<option value="common_c1y_both" <?php if($_GET['type'] == 'common_c1y_both'){echo 'selected="selected"';} ?>>习练卡年卡(含空中)</option>
+<option value="common_2" <?php if($_GET['type'] == 'common_2'){echo 'selected="selected"';} ?>>习练卡双年卡</option> 
+<option value="common_half" <?php if($_GET['type'] == 'common_half'){echo 'selected="selected"';} ?>>习练卡半年卡</option> 
+<option value="both_weekend" <?php if($_GET['type'] == 'both_weekend'){echo 'selected="selected"';} ?>>周末卡</option> 
+<option value="common_month" <?php if($_GET['type'] == 'common_month'){echo 'selected="selected"';} ?>>月卡</option> 
+<option value="both_month" <?php if($_GET['type'] == 'both_month'){echo 'selected="selected"';} ?>>月卡(含空中)</option> 
+<option value="both_quarter" <?php if($_GET['type'] == 'both_quarter'){echo 'selected="selected"';} ?>>季卡</option> 
+ 
+<option value="common_count" <?php if($$_GET['type'] == 'common_count'){echo 'selected="selected"';} ?>>习练卡次卡 </option> 
+<option value="common_count_both" <?php if($$_GET['type'] == 'common_count_both'){echo 'selected="selected"';} ?>>习练卡次卡含空中 </option> 
+<option value="both_c1y" <?php if($$_GET['type'] == 'both_c1y'){echo 'selected="selected"';} ?>>vip </option>
+<option value="both_count" <?php if($_GET['type'] == 'both_count'){echo 'selected="selected"';} ?>>体验卡</option>
+
+
+
+
+<option value="" <?php if($_GET['type'] == ''){echo 'selected="selected"';} ?>>返回全部</option> 
+
+
+
+</select>
+<input type="hidden" name="page"  value="" /><br />
+</br>
+<input type="submit" value="检    索"  class="form-submit" />
+</div>
+</div></form>
+
+<table cellspacing="10%" cellpadding="10">
+ <thead><tr><th> </th>
+ <th>用户名</th>
+ <th>会员卡号</th>
+ <!--<th >id</th>-->
+ <th>手机号</th>
+ <!--<th>请假状态</th>-->
+  <th >会员类型</th>
+   <th >会员来源</th>
+ <!-- <th>上课次数</th>
+  <th>会员卡总次数</th><th>截止日期</th>-->
+  <th>办卡日期</th>
+  <th></th>
+  <th>到期日期</th>
+  <th>已赠天数</th>
+ <th>操作会员</th>
+ <th >课包详情</th>
+ <th>选课</th>
+ <th>修改课包</th>
+ <th ></th> </tr>
+ </thead>
+<tbody>
+<?php
+$m_id=1;
+$res->setFetchMode(PDO::FETCH_ASSOC);
+$rows1 = $res->fetchAll();
+
+	foreach($rows1 as $row) {
+		switch($row["rule_name"]) {
+			case	"package"	:
+				$level = "课程卡";
+				break;
+			case	"common_1"	:
+				$level = "习练卡年卡";
+				break;
+			case	"common_c1y_both"	:
+				$level = "习练卡年卡（含空中）";
+				break;
+			case	"common_2"	:
+				$level = "习练卡双年卡";
+				break;
+			case	"common_count"	:
+				$level = "习练卡次卡   总次数 ".$row['member_attendmax']." .已上：".$row['member_classcount']."次";
+				break;
+			case	"common_count_both"	:
+				$level = "习练卡次卡含空中   总次数 ".$row['member_attendmax']." .已上：".$row['member_classcount']."次";
+				break;
+			case	"both_c1y"	:
+				$level = "vip";
+				break;
+		    case	"common_half":
+				$level = "习练卡半年卡";
+				break;
+			case	"both_count":
+				$level = "微信体验券 ";
+				break;
+			case	"tiyan_1"	:
+				$level = "团购体验1次";
+				break;
+			case	"tiyan_2"	:
+				$level = "团购体验2次";
+				break;
+			case	"tiyan_3"	:
+				$level = "10.31体验3次";
+				break;
+			case	"both_weekend"	:
+				$level = "周末卡";
+				break;
+			case	"both_month"	:
+				$level = "月卡含空中";
+				break;
+			case	"both_month"	:
+				$level = "月卡";
+				break;
+			case	"both_quarter"	:
+				$level = "季卡";
+				break;
+			default		:
+				$level = "未设定";
+				break;
+		}
+		
+		
+		switch($row["member_channel"]) {
+			case	"huiyuanjieshao"	:
+				$channel= "会员介绍";
+				break;
+			case	"jinyihuodong"	:
+				$channel = "金逸活动";
+				break;
+			case	"39yuantiyan"	:
+				$channel = "39元体验";
+				break;
+			case	"thana"	:
+				$channel = "thana";
+				break;
+			case	"louxiahuodong"	:
+				$channel = "楼下活动";
+				break;
+			case	"meituansousuo":
+				$channel = "美团搜索";
+				break;
+			case	"meituantuangou":
+				$channel = "美团团购 ";
+				break;
+			case	"tongcengbangong"	:
+				$channel = "同层办公";
+				break;
+			case	"qita"	:
+				$channel = "其他";
+				break;
+			case	"mamatuantiyan"	:
+				$channel = "妈妈团体验";
+			 
+			default		:
+				$channel = "未设定";
+				break;
+		}
+		
+		echo "<tr ><td>{$m_id}</td>";
+		$m_id=$m_id+1;
+		echo "<td>{$row['member_name']}";
+		if($_SESSION["user_id"]=="2"  ) {echo "memid:(".$row['member_id']." )"; };
+		echo "</td>";
+		echo "<td>{$row['member_cardid']}</td>";
+		
+		echo "<td >{$row['member_cell']}</td>";
+		
+		echo "<td >{$level}</td>";
+		
+		echo "<td >{$channel}</td>";
+		
+		echo "<td>{$row['member_regtime']}</td>";
+		
+		echo "<td></td>";
+		echo "<td>{$row['member_enddate']}</td>";
+		
+		$add=Member::getAdditionnalDays($row['member_id']);
+		echo "<td>".$add[0]."</td>";
+		if($_SESSION["adminuserid"]=="1") {
+			echo "<td><a href='edit_account.php?id={$row['member_id']}'>编辑</a><br /></br><a onclick='return doDel(\"{$row['username']}\",{$row['member_id']});'>删除</a></br>
+			</td>
+			<td><a href='member_class.php?id={$row['member_id']}'>已选  </a><br /></td> 
+			
+			<td><a href='select_class.php?id={$row['member_id']}'>选课程包</a><br /></td> 
+			
+			<td ><a href='change_package_date.php?id={$row['member_id']}'>课包有效期</a><br /></td> 
+			</tr>
+			
+			";
+			 
+			
+		}
+		elseif($_SESSION["adminuserid"]=="2"){
+			
+			echo "<td><a href='edit_account.php?id={$row['member_id']}'>编辑</a><br />
+			</td>
+			<td><a href='member_class.php?id={$row['member_id']}'>已选  </a><br /></td>
+			<td></td>
+			<td><a href='select_class.php?id={$row['member_id']}'>选课程包</a><br /></td>
+				
+			<td ><a href='change_package_date.php?id={$row['member_id']}'>课包有效期</a><br /></td>
+			</tr>
+				
+			";
+			
+			//<a  href='#' onclick='return doDel(\"{$row['username']}\",{$row['member_id']});'>删除</a>
+			}
+			elseif($_SESSION["adminuserid"]=="4"){
+					
+				echo "<td><a href='edit_account.php?id={$row['member_id']}'>编辑</a><br />
+				</td>
+				<td><a href='member_class.php?id={$row['member_id']}'>已选  </a><br /></td>
+				
+				<td><a href='select_class.php?id={$row['member_id']}'>选课程包</a><br /></td>
+			
+				<td > </td>
+				</tr>
+			
+				";
+					
+				//<a  href='#' onclick='return doDel(\"{$row['username']}\",{$row['member_id']});'>删除</a>
+			}
+		else {
+			echo "<td><a href='detail.php?id={$row['member_id']}'>查看</a></td> </tr>";
+		}
+	}
+?>
+</tbody></table>
+<?php 
+	if(count($rows1)==0) echo "没有检索到相关的用户";
+	echo "<font size=+3>每页显示80条。当前页:{$page} 页数：";
+	$current;
+	For($i=1;$i<=$pagenum;$i++){
+		 
+		$show=($i!=$page)?"<a href='view_account.php?page=".$i."'>$i   </a>":"<b>$i</b>";
+		Echo $show." ";
+	}
+	echo "</font>";
+?>
+
+<!-- end content -->
+   </td>
+  </tr>
+ </table>
+
+ </body>
+</html>

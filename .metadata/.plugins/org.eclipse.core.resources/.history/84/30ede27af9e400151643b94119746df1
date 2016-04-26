@@ -1,0 +1,25 @@
+<?php
+session_start();
+$code = mt_rand(0,1000000);
+$_SESSION['code'] = $code;
+if(!$_SESSION["adminuserid"])
+{
+	header("Location:index.php");
+}
+
+include("functions.inc.php");
+
+$regid=$_GET["regid"];
+$attdid=$_GET["attdid"];
+$mid=$_GET["mid"];
+include("entity/TryRegister.php");
+include("entity/ClassArrange.php");
+
+
+TryRegister::cancelRegister($regid);
+TryRegister::addCancelReason($attdid, $mid,"管理员帮团购会员取消");
+ClassArrange::minusArrangeCount($attdid);
+
+header("Location:msg.php?m=update_success_manage_attend");
+
+?>

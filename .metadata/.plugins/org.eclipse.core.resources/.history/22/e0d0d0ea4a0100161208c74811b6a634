@@ -1,0 +1,231 @@
+<meta name="viewport" content="width=device-width,initial-scale=1" charset="utf8">  
+<meta http-equiv="content-type" content="text/html;charset=utf8">
+<?php
+	session_start();
+	include("dbconnect.inc.php");
+	include("functions.inc.php");
+	include ("entity/Payment.php");
+	include ("entity/Member.php");
+	include ("entity/Cardrule.php");
+	#如果php配置中，magic_quotes_gpc没有被设置，则执行过滤字符串。
+	$dt=date('Ymd');
+	$rate=10;//This is for available time range. class count/rate x 7 + days +(31days for missed class)
+	echo "莫圣瑜伽</br>会员______________已选课程包列表：";
+	if( $_POST ){ 
+		 $choices = $_POST['t1']; 
+		 $mid = $_POST['mid'];
+		 $dis = $_POST['discount'];
+		 $dis_flat= $_POST['discount_flat'];
+		 $maxcount_set1=$_POST['maxcount_set1'];
+		 $maxcount_set2=$_POST['maxcount_set2'];
+		 $maxcount_set3=$_POST['maxcount_set3'];
+		 $maxcount_set4=$_POST['maxcount_set4'];
+		 $maxcount_set5=$_POST['maxcount_set5'];
+		 $where=" WHERE package_id='0' ";
+		 for($i=0;$i<count($choices);$i++){
+			 $where=$where." or package_id='{$choices[$i]}'";	   
+	     }
+		$where=$where.";";
+	    $sqlviewsub ="SELECT * FROM `yoga_lu`.`package_design`".$where;	
+	 // echo $sqlviewsub;
+		$db->query('set names UTF8'); 
+		$resviewsub = $db->query($sqlviewsub);
+        
+		$memrule=Member::getMemberRuleByID($mid);
+		//echo $memrule[0];
+		$ruledays=Cardrule::getDaysByRulename($memrule[0]);
+		//echo $ruledays[0];
+		?>
+<a href="select_class.php?id=<?echo $mid?>">返回</a>
+		<table width="99%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+		<thead><tr style="border:1px solid #f7900f;background-color:#fff1cc;height:25px;">
+		<td style="border:1px solid #f7900f;background-color:#fff1cc;height:25px;">课程名</td>
+		<td style="border:1px solid #f7900f;background-color:#fff1cc;height:25px;">价格</td>
+		</tr>
+		</thead>
+		<tbody>
+
+<?php   
+        $haspackage=0;
+        $hasset=0;
+		$total1=0;
+		$total2=0;
+		$total3=0;
+		function updatedays($db,$payid,$howlong){
+			
+			$sqlupdatedays="UPDATE `yoga_lu`.`payment_table` SET `payment_days` ='{$howlong}' where `payment_id` ='{$payid}'";
+		    $resupdatedays = $db->exec($sqlupdatedays);
+			 
+		
+		}
+		function updateadditionaldays($db,$payid,$howlong){
+				
+			$sqlupdatedays="UPDATE `yoga_lu`.`payment_table` SET `additional_days` ='{$howlong}' where `payment_id` ='{$payid}'";
+			$resupdatedays = $db->exec($sqlupdatedays);
+			 
+		
+		}
+		function updateLeavedaysAndCounts($db,$memid,$days){
+			$howlong=0;
+			$counts=0;
+			if($days<=90){
+				
+				$howlong=15;
+				$counts=1;
+			}elseif($days>90 and $days<=183){
+				
+				$howlong=25;
+				$counts=2;
+			}elseif($days>183){
+				
+				$howlong=45;
+				$counts=3;
+			}else{
+				
+			}
+			$sqlupdatedays="UPDATE `yoga_lu`.`member_user` SET `member_leavedays` ='{$howlong}',`member_leavemaxdays` ='{$howlong}',`member_leavecount` ='{$counts}' where `member_id` ='{$memid}'";
+			//echo $sqlupdatedays;
+			$resupdatedays = $db->exec($sqlupdatedays);
+			 
+		 
+		
+		}
+		 
+		function addpayidtosub($db,$memid,$pid,$payid,$max){
+			
+			$sqladdsub ="INSERT INTO `yoga_lu`.`package_subscribe` (`member_id`,`package_id`,`payment_id`,`set_max`) select '{$memid}','{$pid}','{$payid}','{$max}'  from dual where not exists (select * from package_subscribe where package_id='{$pid}' AND member_id='{$memid}' AND payment_id ='{$payid}');"; 
+		    $ressqladdsub = $db->exec($sqladdsub);
+			 
+		}
+		function createpayment($db,$payid,$memid,$dis){
+			$sqladdpayment="INSERT INTO `yoga_lu`.`payment_table` (`payment_id`,`member_id`,`payment_discount`) select '{$payid}','{$memid}','{$dis}' from dual where not exists (select * from payment_table where payment_id ='{$payid}');";
+			//$sqladdpayment="INSERT INTO `yoga_lu`.`payment_table` (`payment_id`,`member_id`)  values ('{$payid}','{$memid}');";
+			
+			
+			//echo $sqladdpayment;
+			$resaddpayment = $db->exec($sqladdpayment);
+			 		
+		}
+		 
+		$resviewsub->setFetchMode(PDO::FETCH_ASSOC);
+		$rows=$resviewsub->fetchAll();
+		foreach($rows as $rowviewsub) {		
+				
+			echo "<tr style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>"; 
+			echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'><b>{$rowviewsub['package_name']}</b></td>";
+			echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>{$rowviewsub['package_price']}</td>";
+			echo "</tr > ";
+			if(substr($rowviewsub['package_id'],0,7)=='package'){
+				$total1=$total1+$rowviewsub['package_price'];
+				addpayidtosub($db,$mid,$rowviewsub['package_id'],$mid.$dt,0);
+				createpayment($db,$mid.$dt,$mid,$dis);				
+				$haspackage=1;
+				
+				
+			}
+			elseif(substr($rowviewsub['package_id'],0,4)=='set1'){
+				$total2=$total2+$rowviewsub['package_price'];
+				createpayment($db,"set1-".$mid.$dt,$mid,$dis);
+				addpayidtosub($db,$mid,$rowviewsub['package_id'],"set1-".$mid.$dt,$maxcount);	
+				//check if the set is for common card,if yes, update with fixed days 
+		        if(substr($memrule[0],0,4)=='both' or $memrule[0] ='common_count_both'){
+		        	updatedays($db,"set1-".$mid.$dt,$ruledays[0]);
+		        }
+		        //else, update with the set card days
+		        else{
+		        	updatedays($db,"set1-".$mid.$dt,365);
+		        }
+				
+		    }
+			elseif(substr($rowviewsub['package_id'],0,4)=='set2'){
+				$total2=$total2+$rowviewsub['package_price'];
+				createpayment($db,"set2-".$mid.$dt,$mid,$dis);
+				addpayidtosub($db,$mid,$rowviewsub['package_id'],"set2-".$mid.$dt,$maxcount);	
+				if(substr($memrule[0],0,4)=='both' or $memrule[0] ='common_count_both'){
+					updatedays($db,"set2-".$mid.$dt,$ruledays[0]);
+				}
+				//else, update with the set card days
+				else{
+					updatedays($db,"set2-".$mid.$dt,92); 
+				}
+				
+		    }
+			elseif(substr($rowviewsub['package_id'],0,4)=='set3'){
+				$total2=$total2+$rowviewsub['package_price'];
+			    addpayidtosub($db,$mid,$rowviewsub['package_id'],"set3-".$mid.$dt,$maxcount);	
+				createpayment($db,"set3-".$mid.$dt,$mid,$dis);
+			   
+			    if(substr($memrule[0],0,4)=='both' or $memrule[0] ='common_count_both'){
+			    	updatedays($db,"set3-".$mid.$dt,$ruledays[0]);
+			    }
+			    //else, update with the set card days
+			    else{
+			    	 updatedays($db,"set3-".$mid.$dt,122);
+			    }
+		    }
+		    elseif(substr($rowviewsub['package_id'],0,4)=='set4' ){
+		    	//$total2=$total2+$rowviewsub['package_price'];
+		    	addpayidtosub($db,$mid,$rowviewsub['package_id'],"set4-".$mid.$dt,$maxcount);
+		    	createpayment($db,"set4-".$mid.$dt,$mid,$dis);
+		    	    	 
+		    }
+		    elseif(substr($rowviewsub['package_id'],0,4)=='set5' ){
+		    	//$total2=$total2+$rowviewsub['package_price'];
+		    	addpayidtosub($db,$mid,$rowviewsub['package_id'],"set5-".$mid.$dt,$maxcount);
+		    	createpayment($db,"set5-".$mid.$dt,$mid,$dis);
+		    		
+		    }
+			else{
+				$total3=$total3+$rowviewsub['package_price'];
+			}
+		    //$res = $db->query($sqladdsub);
+            //$db->query('set names UTF8'); 
+		   		   
+	     }
+			$total=$total1+$total2+$total3 ;
+			$actualtotal=$total*$dis-$dis_flat;
+			Payment::addaccounting($actualtotal,$mid,"购买课程包");
+
+		echo "<tr style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>";
+		echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>课程包总价</td><td>{$total1}</td>";
+		echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>单项卡总价</td><td>{$total2}</td>";
+		echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>习练卡总价</td><td>{$total3}</td>";
+		echo "<td style='border:1px solid #f7900f;background-color:#fff1cc;height:25px;'>总价</td><td>{$total}</td>";
+		echo "</tr > ";
+ 		
+	
+		if($haspackage==1)
+		{
+			
+		$sqlgetdays="SELECT SUM(package_course_count) as total_days FROM `package_design` inner join `package_subscribe` WHERE package_design.package_id=package_subscribe.package_id and package_subscribe.payment_id='{$mid}{$dt}'";
+		//echo $sqlgetdays;
+		$resday=$db->query($sqlgetdays);
+		$resday->setFetchMode(PDO::FETCH_NUM);
+		$rowday=$resday->fetch();
+		 
+		$pcounts=$rowday[0];
+		
+	    
+	    $additianaldays=Member::getAdditionnalDays($mid);
+		$resgetdays= ceil($pcounts/$rate*30.5+($pcounts/$rate)*4);
+		updatedays($db,$mid.$dt,$resgetdays);
+		
+		//echo $ressetdays;
+		updateadditionaldays($db,$mid.$dt,$additianaldays[0]);
+		//setAdditionnalDaysUsed($mid);
+		//echo $resgetdays;
+		updateLeavedaysAndCounts($db,$mid,$resgetdays);
+		
+		
+	    }
+	
+		 
+	}
+	else {echo "no choice";}
+	
+	
+	 
+?>
+
+</tbody></table>
+<a href="member_class.php?id=<?echo $mid?>">返回</a>

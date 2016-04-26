@@ -1,0 +1,108 @@
+<?php 
+session_start();
+	if(!$_SESSION["usercell"]) 
+   {
+	   header("location:index.php");
+  }
+	include("header.inc.php");
+
+	
+?>
+<body> 
+<div data-role="dialog" id="signclass" data-title="签到">
+ <header data-role="header"><h1>手机打卡</h1></header>  
+   <div data-role="content" class="content">  
+
+<?php
+	include(dirname(__FILE__).'/'."dbconf/settings.inc.php");
+	include(dirname(__FILE__).'/'."dbconf/dbconnect.inc.php");	
+	if($_POST )
+	{ 
+$choices = $_POST['classcancel']; 
+	$classcount = $_POST['classcancelcount-'.$choices];
+	$classtype=$_POST['classtype-'.$choices];
+	$pid=$_POST['packageid-'.$choices];
+	$innerid=$_POST['innerid-'.$choices];
+	//echo $innerid;
+	//echo $choices;
+	//echo $classcount;
+	//echo $classtype;
+	//echo $packageid;
+	if($_POST['classcancel']){
+	//for($i=0;$i<count($choices);$i++)
+		//{
+			echo "签到成功";//.$choices."<br />";
+			//$sql = "Delete FROM register_record  WHERE register_record.register_id= {$choices[$i]}";
+			$sql = "UPDATE register_record SET `is_attended` = `is_attended` + 1 WHERE `register_record`.`register_id`= {$choices};";
+			$sqladd = "UPDATE member_user SET `member_classcount` = `member_classcount`+1 WHERE `member_id`= {$_SESSION['userid']};";
+			function addInnerRecored($db,$memid,$pid,$inid){
+				
+				$sql_addinnerrec = "INSERT into jump_record (`member_id`,`package_id`,`inner_id`) values ({$memid},'{$pid}',{$inid})";
+			    //echo $sql_addinnerrec;
+				$resaddinnerrec = $db->exec($sql_addinnerrec);
+			  }
+			function addPackageSub($db,$memid,$pid){
+				$sqladdpackage ="UPDATE package_subscribe SET `package_attended` = `package_attended`+1 WHERE `member_id`= {$memid} AND `package_id`='{$pid}';";
+                			
+			//echo $sqladdpackage;
+			   $respackageadd = $db->exec($sqladdpackage);	
+			    
+			   if($respackageadd>0){
+				   
+				  $mail->Subject="正 测试 邮件 sign";
+				  $mail->Body=$_SESSION['userid'].$pid." -".$innerid;
+				  $mail->send(); 
+			   }
+			}
+			//function removeJumpIfHas(){
+				
+			//}
+			//echo $classtype;
+			if($classtype=='package' or $classtype=='set')
+			 {
+				addInnerRecored($db,$_SESSION['userid'],$pid,$innerid);
+				//addPackageSub($_SESSION['userid'],$pid);
+				
+			 }
+			//echo $classtype;
+			//echo $packageid;
+			
+			
+			$res = $db->exec($sql);
+			$resadd = $db->exec($sqladd);
+			
+			
+			if($_SESSION["userlevel"]=='common_count')
+			{
+				$sqlcheckcount ="SELECT member_classcount from member_user WHERE `member_id`= {$_SESSION['userid']};";
+				$rescheckcount = $db->query($sqlcheckcount);
+				$rescheckcount->setFetchMode(PDO::FETCH_ASSOC);
+				$row = $rescheckcount->fetch();
+				$_SESSION[classcount]=$row['member_classcount'];
+				if($row['member_classcount']>=$_SESSION["attendmax"]){
+						$_SESSION["count_overmax"] =1;
+				}
+				
+			}
+		}
+			
+		else{
+		echo "没有选择课程";	//echo $sql;
+			
+			
+			
+       // }
+	
+	}}
+	else{
+	echo "没有选择课程";
+}
+?>
+<a href="registered.php" data-role="button" data-inline="false" data-ajax="false">返回</a>
+</div>  
+   <footer data-role="footer"><h4></h4></footer>  
+</div> 
+
+
+</body>
+</html>

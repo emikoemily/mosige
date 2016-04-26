@@ -1,0 +1,61 @@
+<?php 
+session_start();
+	if(!$_SESSION["usercell"]) 
+   {
+	   header("location:index.php");
+  }
+	include("header.inc.php");
+
+	
+?>
+<body>  
+
+
+<div data-role="dialog">  
+   <header data-role="header"><h1>评论课程</h1></header>  
+   <div data-role="content" class="content">  
+      
+	<?php
+    include(dirname(__FILE__).'/'."dbconf/settings.inc.php");
+	include(dirname(__FILE__).'/'."dbconf/dbconnect.inc.php");
+	 
+	if( $_POST ){ 	
+		$choices = $_POST['arrange_id']; 
+		$reviews = $_POST['review_content'];
+		$register = $_POST['reg_id'];
+		$star = $_POST['review_star'];
+		echo '已填的评价都提交啦，谢谢你的反馈';
+		for($i=0;$i<count($choices);$i++)
+		{
+			if($star[$i]!=''){
+			
+			//echo '有个课没评哦</br>';trim($reviews[$i])!='' AND
+			//}
+		//	else{
+			//.implode(',',$star); 
+			//echo "选项".$choices[$i]."被选中<br />";
+			$sql = "INSERT INTO `yoga_lu`.`member_review` (`arrange_id`, `review_content`,`star`,`member_id`) VALUES ($choices[$i], '$reviews[$i]','$star[$i]',{$_SESSION['userid']});";
+			$sqlupdate ="UPDATE register_record set reviewed = 1 where register_id = $register[$i]";
+			//$sqladdcount = "UPDATE class_arrange SET `registercount` =`registercount`+1 WHERE `arrange_id`=$choices[$i];"
+			//$sqladdcount = "UPDATE class_arrange SET `registercount` =`registercount`+1 WHERE `arrange_id`=$choices[$i];";
+			//echo $sql;
+			//echo $sqladdcount;
+			//echo $sqlupdate;
+			$db->query('set names UTF8'); 
+			$res = $db->query($sql);
+			$resupdate = $db->query($sqlupdate);
+			//$res2 = $db->query($sqladdcount);
+			}
+		}
+}
+else{
+	echo "没有选择课程";
+}
+?>  
+   </div>
+	<a href="attendhistory.php" data-role="button" data-inline="false" data-ajax="false">返回</a>   
+   <footer data-role="footer"><h4></h4></footer>  
+</div>  
+</body>  
+
+</html>

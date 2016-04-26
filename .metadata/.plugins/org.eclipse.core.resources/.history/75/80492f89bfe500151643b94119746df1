@@ -1,0 +1,285 @@
+<?php 
+session_start();
+
+	if(!$_SESSION["usercell"]) 
+   {
+	   header("location:index.php");
+  }
+	include("header.inc.php");
+	include(dirname(__FILE__).'/'."dbconf/settings.inc.php");
+	include(dirname(__FILE__).'/'."dbconf/dbconnect.inc.php");
+ 	include("sendmail.php");
+	 
+	
+?>
+<body>  
+
+
+  <div data-role="dialog">  
+   <header data-role="header"><h1>约课确认</h1></header>  
+   <div data-role="content" class="content">  
+      
+<?php
+	
+	
+	function getarrinfo($db,$arrid){
+	$sqlga="SELECT arrangedate,starttime  FROM class_arrange WHERE arrange_id  = {$arrid}";
+	//echo $sqlgp;
+	$db->query('set names UTF8');
+	$return='';
+	$resga=$db->query($sqlga);
+	$rows=$resga->fetchAll();
+	foreach($rows as $rowga){
+				$return=$return.$rowga['arrangedate']." ".$rowga['starttime'];
+		}
+		return $return;
+	}
+							
+	function checkdup($db,$dupid){
+		if($dupid=="0"){
+			return "";
+		}else{
+			$sqlquery="select class_name,starttime,endtime from register_record,overlap
+			inner join class_arrange on register_record.arrange_id = class_arrange.arrange_id
+			INNER JOIN class_design ON class_design.class_id = class_arrange.class_id
+			where overlap='{$dupid}' AND register_record.is_attended = 0
+			AND is_canceled =0 AND member_id={$_SESSION['userid']};";
+			echo $sqlquery;
+			$db->query('set names UTF8');
+			$resdup=$db->query($sqlquery);
+			$resdup->setFetchMode(PDO::FETCH_ASSOC);
+		/*	$rows=$resdup->fetchAll();
+			$rowsnum=count($rows);
+				
+			$return="不过预约的这节课与已预约的课时间重复,请取消其中一节:</br>";
+			//$realdup=0;
+			if($rowsnum>1){
+				foreach($rows as $rowsdup){
+					$realdup=$realdup+$rowsdup['overlap'];
+					$return=$return.$rowsdup['class_name']." ".$rowsdup['starttime']." - ".$rowsdup['endtime']."</br> ";
+				}
+	
+				$return=$return."";
+				return $return;
+					
+			}
+			else{
+					
+				return "";
+			}*/
+		}
+			
+	}
+	
+	function alertjumpclass($db,$pids,$arrid){
+
+		$sql_getinnerid = "SELECT class_design.inner_id FROM class_arrange 
+		inner join class_design ON class_arrange.class_id=class_design.class_id WHERE `arrange_id`={$arrid};";
+		//echo $sql_getinnerid;
+		$res_getinnerid=$db->query($sql_getinnerid);
+		$res_getinnerid->setFetchMode(PDO::FETCH_NUM);
+		$chooseinnerid=$res_getinnerid->fetch();
+		//echo "课程内部序列：".$chooseinnerid[0];
+		$current_innerid=$chooseinnerid[0];
+		$cid=$current_innerid;
+		if($current_innerid!=1){
+			$previous_innerid=$current_innerid-1;
+		
+			$sql_check_previous= "SELECT class_name,class_description,register_id 
+			FROM register_record INNER JOIN class_arrange ON register_record.arrange_id= class_arrange.arrange_id
+			INNER JOIN class_design ON class_design.class_id = class_arrange.class_id
+			AND register_record.is_canceled !=1
+			AND class_design.package_id='{$pids}'
+			AND class_design.inner_id ={$previous_innerid} AND member_id={$_SESSION['userid']};";
+			//echo $sql_check_previous;
+		$db->query('set names UTF8');
+			$res_check_previous = $db->query($sql_check_previous);
+			
+			$num_check_previous= $res_check_previous->fetchAll();
+				
+			//echo $num_check_previous;
+			//echo count($num_check_previous);
+			if(count($num_check_previous)==0){
+				echo "跳课提醒。我们建议能够按照进度来学习，如果无法完成，所跳课程可以在有效期结束后进行申请补课";
+		
+		
+			}
+		
+		}
+
+		
+	}
+	
+	function getpackageinfo($db,$pid){
+		$sqlgp="SELECT DISTINCT class_name  FROM class_design WHERE class_design.package_id  = '{$pid}'";
+		//echo $sqlgp;
+		$db->query('set names UTF8');
+		$return='';
+		$resgp=$db->query($sqlgp);
+		$resgp->setFetchMode(PDO::FETCH_ASSOC);
+		$rows=$resgp->fetchAll();
+		foreach($rows as $rowgp){
+			$return=$return.$rowgp['class_name'];
+		}
+		return $return;
+	}
+	
+	
+	/*
+	 * Start choosing logic
+	 */
+	$result=0;
+	$rate=3;//This is for available time range. class count/rate x 7 + days +(31days for missed class)
+	if( $_POST ){ 
+		 
+		if(isset($_POST['originator'])) {
+			if($_POST['originator'] != $_SESSION['code']){
+				echo "请不要刷新本页面";
+			}else{
+			
+			$choices = $_POST['classchoice']; 
+			$pids = $_POST['classpid-'.$choices];
+			$pcounts= $_POST['classpcount-'.$choices];
+			$classtype=$_POST['classtype-'.$choices];
+			$overlap=$_POST['overlap-'.$choices];
+			
+				
+			
+			if($_POST['classchoice']){
+				
+			
+					$sqladdcount = "UPDATE class_arrange SET `registercount` =`registercount`+1 WHERE `registercount`<`maxposition` AND `arrange_id`={$choices} ;";
+					$row2 = $db->exec($sqladdcount);
+					
+					
+					$sqldebugcount="select registercount,try_registercount from class_arrange where `arrange_id`={$choices}";
+					$resdebugcount = $db->query($sqldebugcount);
+					$resdebugcount->setFetchMode(PDO::FETCH_ASSOC);
+					$rowdebugcount=$resdebugcount->fetch();
+					 
+					
+					$maildebug->Subject="up_{$_SESSION['user_name']}_{$_POST['originator']}_{$_SESSION['code']}_{$choices}Affect：".$row2."The register count：".$rowdebugcount['registercount']." Try register count:".$rowdebugcount['try_registercount'];
+					$maildebug->Body="Update reg count.Affect：".$row2."Debug:sql:".$sqladdcount ."The register count：".$rowdebugcount['registercount']." Try register count:".$rowdebugcount['try_registercount'];
+					$maildebug->send();
+					//end of debug
+				  if($row2==0)  {
+						//$db->query("ROLLBACK");
+						echo '手慢了，好可惜，没有抢到最后一个空位</br>';
+						//echo $row;
+						//echo $row2;
+					}							
+		
+				  else {
+						//	$db->query("BEGIN"); 
+						if(substr($_SESSION["userrule"],0,12)=="common_count"){
+							
+							
+							$sql = "INSERT INTO `yoga_lu`.`register_record` (`arrange_id`, `member_id`) values ($choices,{$_SESSION['userid']});";
+							$row = $db->exec($sql);
+							echo '预约成功。</br>';
+				 
+						}
+						else{
+							$sql = "INSERT INTO `yoga_lu`.`register_record` (`arrange_id`, `member_id`) select " .$choices.",{$_SESSION['userid']} from dual where not exists (select * from register_record
+							where arrange_id={$choices} AND is_canceled=0 AND member_id={$_SESSION['userid']});";
+							$row = $db->exec($sql);
+							 
+								
+							if($row==0){
+								//$db->query("ROLLBACK");
+								echo '已预约过这门课了</br>';
+								$sqlrevert = "UPDATE class_arrange SET `registercount` =`registercount`-1 WHERE  `arrange_id`={$choices} ;";
+								$resrevert = $db->exec($sqlrevert);
+								//echo $row;
+								//echo $row2;
+							}
+											
+							else{
+					 
+							    //检查跳课
+								$cid="";
+								if($classtype=='package'){
+									alertjumpclass($db,$pids,$choices);
+										
+								}
+								//结束检查跳课
+								   
+								
+							}
+						if($row!=0&&$row2!=0){
+							//$db->query("COMMIT");
+				
+							echo '预约成功。</br>';
+							
+							//$dup=checkdup($db,$overlap);
+							if($dup!=""){
+								 
+								echo $dup;
+	
+					
+								}
+							if($_SESSION["userlevel"]=='both_count'){
+								$sql_2ci="SELECT COUNT(*) FROM `register_record` WHERE member_id={$_SESSION["userid"]} AND is_canceled!=1";
+								$res_2ci=$db->query($sql_2ci);
+								$res_2ci->setFetchMode(PDO::FETCH_NUM);
+								$rs = $res_2ci->fetch();
+							
+									if($rs[0]>=2){
+										$_SESSION["tiyanover"]=1;}
+									else{
+										$_SESSION["tiyanover"]=0;
+									}
+			
+								 
+							} 
+							if($_SESSION["userlevel"]=='common_count'){
+								$sql_2ci="SELECT COUNT(*) FROM `register_record` WHERE member_id={$_SESSION["userid"]} AND is_canceled!=1";
+								$res_2ci=$db->query($sql_2ci);
+								$res_2ci->setFetchMode(PDO::FETCH_NUM);
+								$rs = $res_2ci->fetch();
+			
+									if($rs[0]>=10){
+										$_SESSION["count_overmax"]=1;}
+										else{
+											$_SESSION["count_overmax"]=0;
+										}
+											
+								
+							}
+							//$result=1;
+							
+							 
+							$mailcontent="{$_SESSION['user_name']}(手机:{$_SESSION["usercell"]}) 预约 ";
+							$mailcontent=$mailcontent.getpackageinfo($db,$pids);
+							$mailcontent=$mailcontent." 第{$cid}节  ". getarrinfo($db,$choices);
+							$mail->Subject=$mailcontent;
+							$mail->Body=$mailcontent."zhengdebug1:".$_POST['classchoice']."zhengdebug1:".$_POST['classpid-'.$choices]."( package_id={$pids}"."arrange_id={$choices})";
+							$mail->send();
+						}
+
+		
+					}
+				
+				//$db->query("END");
+			   }
+			 
+			}else{
+				echo "没有选择课程";
+				}	
+			
+			}
+			
+		}
+     }
+	
+	else{
+		echo "没有选择课程";
+	}
+?>  
+   </div>
+	<a href='register.php' data-role='button' data-inline='false' data-ajax='false'>返回</a>
+   <footer data-role="footer"><h4></h4></footer>  
+</div>  
+</body>  
+
+</html>

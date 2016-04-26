@@ -1,0 +1,7 @@
+<?php
+	include("settings.inc.php");
+	#connect to db
+	$con = mysqli_connect($dbhost,$dbuser,$dbpass);
+	if(!$con) die("mysqli error:".mysqli_error());
+	mysqli_select_db($dbname,$con);
+?>

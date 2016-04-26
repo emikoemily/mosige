@@ -1,0 +1,126 @@
+<?php
+class Member{
+		public $name;
+		public $pass;
+		public $mail;
+		public $sex;
+		public $tel;
+		public $birthday;
+		public $point;
+		public $intro="";
+		public $cardid;
+		public $rule;
+		public $memid=0;
+		private static $dsn = "mysql:host=127.0.0.1;dbname=yoga_lu";
+		private static $dbuser =	"yoga_lu";
+		private static $dbpass = "Yooq_yoga_lu";
+	 
+		function __construct($name,$pass,$mail,$sex,$tel,$birthday,$point,$intro,$cardid,$rule)
+		{ 
+			$this->name=$name; 	
+			$this->pass=$pass; 	
+			$this->mail=$mail; 
+			$this->sex=$sex;
+			$this->tel=$tel;
+			$this->birthday=$birthday; 
+			$this->point=$point; 
+			$this->intro=$intro; 
+			$this->cardid=$cardid; 		
+			$this->rule=$rule; 
+		// print_r(debug_backtrace());
+		 //print_r(error_get_last());
+		}
+		
+		public function createMemberInDB(){
+			$db = new PDO(self::$dsn, self::$dbuser,  self::$dbpass);
+			$sql = "INSERT INTO member_user (member_name,member_password,member_email,member_sex,member_cell,member_level,member_birthday,member_points,member_intro,member_attendmax,member_cardid,member_enddate,member_days) ";
+			
+			$sql .= " values('{$this->name}',";
+			
+			$sql .= " '{$this->pass}',";
+			$sql .= " '{$this->mail}', ";
+			$sql .= " '{$this->sex}',";
+			$sql .= " '{$this->tel}', ";
+			$sql .= " '{$this->rule->level_actual}', ";
+			$sql .= " '{$this->birthday}', ";
+			$sql .= " '{$this->point}', ";
+			$sql .= " '{$this->intro}', ";
+			$sql .= " '{$this->rule->maxcount}', ";
+			$sql .= " '{$this->cardid}',";
+			$sql .= " '{$this->rule->enddate}',";
+			$sql .= " {$this->rule->days}) ;";
+			//echo $sql;
+			//$db->query('set names UTF8'); 
+			//$res = $db->query($sql);
+			$db->exec("set names UTF8;");
+			$db->exec($sql);
+			$this->memid = $pdo->lastInsertId();
+			
+			$db=null;
+			//if(!$res) {
+			//	die("");
+			//}
+			//print_r(error_get_last());
+		//	print_r(debug_backtrace());
+			
+		}
+		 
+		
+		
+		
+		public function subKongZhong(){
+			$db = new PDO(self::$dsn, self::$dbuser,  self::$dbpass);
+			 
+			//$db->query('set names UTF8');
+			//$res = $db->query($sql);
+			$db->exec("set names UTF8;");
+			$db->exec($sql);		
+			
+			
+			$dt=date('Ymd');
+			$payid="set1-".$this->memid.$dt;
+			$sqladdsub ="INSERT INTO `yoga_lu`.`package_subscribe` (`member_id`,`package_id`,`payment_id`) select '{$this->memid}','set1','{$payid}'  from dual where not exists (select * from package_subscribe where package_id='set1' AND member_id='{$this->memid}' AND payment_id ='{$payid}');";
+			$db->exec($sqladdsub);;
+			$sqladdpayment="INSERT INTO `yoga_lu`.`payment_table` (`payment_id`,`member_id`) select '{$payid}','{$this->memid}' from dual where not exists (select * from payment_table where payment_id ='{$payid}');";
+			$db->exec($sqladdpayment);
+			$sqlupdatedays="UPDATE `yoga_lu`.`payment_table` SET `payment_days` ='{$this->rule->days}' where `payment_id` ='{$payid}'";
+			$db->exec($sqlupdatedays);
+			$db=null;
+			//if(!$res) {
+			//	die("");
+			//}
+			//print_r(error_get_last());
+			//	print_r(debug_backtrace());
+				
+		}
+		
+		
+		public function subErTongYoga(){
+			$db = new PDO(self::$dsn, self::$dbuser,  self::$dbpass);
+			 
+			//$db->query('set names UTF8');
+			//$res = $db->query($sql);
+			$db->exec("set names UTF8;");
+			$db->exec($sql);		
+			
+			
+			$dt=date('Ymd');
+			$payid="set2-".$this->memid.$dt;
+			$sqladdsub ="INSERT INTO `yoga_lu`.`package_subscribe` (`member_id`,`package_id`,`payment_id`) select '{$this->memid}','set2','{$payid}'  from dual where not exists (select * from package_subscribe where package_id='set1' AND member_id='{$this->memid}' AND payment_id ='{$payid}');";
+			$db->exec($sqladdsub);
+			$sqladdpayment="INSERT INTO `yoga_lu`.`payment_table` (`payment_id`,`member_id`) select '{$payid}','{$this->memid}' from dual where not exists (select * from payment_table where payment_id ='{$payid}');";
+			$db->exec($sqladdpayment);
+			$sqlupdatedays="UPDATE `yoga_lu`.`payment_table` SET `payment_days` ='{$this->rule->days}' where `payment_id` ='{$payid}'";
+			$db->exec($sqlupdatedays);
+				
+			$db=null;
+			//if(!$res) {
+			//	die("");
+			//}
+			//print_r(error_get_last());
+			//	print_r(debug_backtrace());
+		}
+		
+	}
+	
+	?>

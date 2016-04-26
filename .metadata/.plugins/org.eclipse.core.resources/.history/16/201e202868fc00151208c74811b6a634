@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+  <iframe src="arrange_logic.php?time=10%3A30%3A00&day=working" ></iframe>
+  <iframe src="arrange_logic.php?time=12%3A00%3A00&day=working" ></iframe>
+  <iframe src="arrange_logic.php?time=17%3A30%3A00&day=working" ></iframe>
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+<?php
+	
+	session_start();
+	if(!$_SESSION["adminuserid"]) header("Location:index.php");
+	include("header.inc.php");
+	include("dbconnect.inc.php");
+	$page=isset($_GET['page'])?intval($_GET['page']):1;        //这句就是获取page=18中的page的值，假如不存在page，那么页数就是1。  
+	$num=50;                                      //每页显示10条数据  
+
+	//echo $_GET["name"];
+	if($_GET["name"] != "") {
+		$name = addslashes($_GET["name"]);
+		$where .= " and member_name like '%{$name}%' ";
+	}
+	if($_GET["tel"] != "") {
+		$tel = addslashes($_GET["tel"]);
+		$where .= " and member_cell like '%{$tel}%' ";
+	}
+	if($_GET["type"] != "") {
+		$type = addslashes($_GET["type"]);
+		$where .= " and member_level = '{$type}' ";
+	}
+	$sql_all = "select review_content,arrangedate,starttime,star,class_design.class_name,member_name,teacher_name 
+	from member_review 
+inner join class_arrange on member_review.arrange_id=class_arrange.arrange_id
+inner join class_design on class_arrange.class_id=class_design.class_id
+inner join teacher_table on class_arrange.teacher_id=teacher_table.teacher_id
+inner join member_user on member_user.member_id=member_review.member_id";
+		$res_all = $db->query($sql_all);
+		$res_all->setFetchMode(PDO::FETCH_ASSOC);
+		$rows = $res->fetchAll();
+	$total=count($rows); //查询数据的总数  
+    $pagenum=ceil($total/$num); 
+	 
+	echo "haha`1";
+	//假如传入的页数参数大于总页数，则显示错误信息  
+	If($page>$pagenum){  
+		   Echo "Error : Can Not Found The page .";  
+		   Exit;  
+	}  
+
+	$offset=($page-1)*$num;
+	if($offset<0){$offset=1;}
+	
+	$sql = "select review_content,arrangedate,starttime,star,class_design.class_name,member_name,teacher_name,inner_id 
+	from member_review 
+inner join class_arrange on member_review.arrange_id=class_arrange.arrange_id
+inner join class_design on class_arrange.class_id=class_design.class_id
+inner join teacher_table on class_arrange.teacher_id=teacher_table.teacher_id
+inner join member_user on member_user.member_id=member_review.member_id limit $offset,$num";
+	//echo $sql;
+	$db->query('set names UTF8');
+	$res = $db->query($sql);
+	//$info=$db->query($sql);   //获取相应页数所需要显示的数据  
+	//While($it=mysqli_fetch_array($info)){  
+	//	   Echo $it['name']."<br />";  
+	//}                                                              //显示数据  
+echo "每页显示50条。当前页:{$page} 页数：";
+$current;
+	For($i=1;$i<=$pagenum;$i++){  
+		   
+		   $show=($i!=$page)?"<a href='view_review.php?page=".$i."'>$i   </a>":"<b>$i</b>";  
+		   Echo $show." ";  
+	}
+	
+?>
+ <table id="content">
+  <tr>
+   <td id="sidebar-left"><div class="block block-user" id="block-user-1">
+  <h2 class="title"><?php echo $_SESSION["username"]; ?></h2>
+ <div class="content">
+<ul class="menu">
+
+<?php
+//include ("view_review_menu.php");
+echo  "<li class='leaf'><a href='account.php'>会员管理</a></li>";
+echo "<li class='leaf'><a href='manage_attend.php' target='_blank'>签到表</a></li>";
+if($_SESSION["adminuserid"]=="1" ) {
+	echo "<li class='leaf'><a href='view_review.php' class='active' >数据统计和后台管理</a></li>";
+	echo "<li class='leaf'><a href='register.php'>注册后台用户</a></li>";
+	echo "<li class='leaf'><a href='manage_cardrule.php' >添加会员卡规则</a></li>";}
+?>
+<li class="leaf"><a href="logout.php">注销登录</a></li>
+
+</ul>
+</div>
+</div>
+</td>
+   <td id="main">
+<div class="breadcrumb"><a href="./">主页</a> &raquo; <a href="./">用户帐号</a></div><h2><?php echo $_SESSION["username"]; ?></h2><ul class="tabs primary">
+
+
+
+<li class="active"><a href="view_review.php">课程评价</a></li>
+<li ><a href="statistics.php">人数统计</a></li>
+ <li ><a href="manage_notice.php">管理小喇叭</a></li>
+<li ><a >待定待定</a></li>
+<li ><a >待定待定</a></li>
+<li ><a >待定待定</a></li>
+<li ><a >待定待定</a></li>
+<li ><a >待定待定</a></li>
+
+<table >
+ <thead><tr>
+ <th>用户名</th>
+ <th>课程名</th>
+ <!--<th >id</th>-->
+ <th>上课日期</th>
+ <!--<th>请假状态</th>-->
+  <th>上课时间</th>
+ <!-- <th>上课次数</th>
+  <th>会员卡总次数</th><th>截止日期</th>-->
+  <th>老师</th>
+  
+   <th>评           价</th>
+ 
+  <th>打分</th>
+ 
+ <th>操作</th> </tr>
+ </thead>
+<tbody>
+<?php
+$m_id=1;
+$res->setFetchMode(PDO::FETCH_ASSOC);
+$rows1 = $res->fetchAll();
+	foreach($rows1 as $row) {
+		
+		
+		echo "<tr >";
+			//echo "<td></td>";
+		echo "<td >{$row['member_name']}</td>";
+		//echo "<td></td>";
+		echo "<td >{$row['class_name']}{$row['inner_id']}</td>";
+		//echo "<td></td>";
+		//echo "<td>{$row['member_id']}</td>";
+		echo "<td >{$row['arrangedate']}</td>";
+		//echo "<td></td>";
+		echo "<td >{$row['starttime']}</td>";
+		//echo "<td></td>";
+		//echo "<td>{$leave}</td>";
+		echo "<td >{$row['teacher_name']}</td>";
+		//echo "<td></td>";
+	//	echo "<td>{$row['member_classcount']}</td>";
+		//echo "<td>{$row['member_attendmax']}</td>";
+		echo "<td >{$row['review_content']}</td>";
+		//echo "<td></td>";
+		//echo "<td>{$leave}</td>";
+		echo "<td>{$row['star']}</td>";
+		//echo "<td></td>";
+		//echo "<td>{$row['member_enddate']}</td>";
+		//echo "<td class='active'>{$row['reg_time']}</td>";
+		echo "<td></td></tr>";
+		 
+	}
+?>
+</tbody></table>
+<?php 
+	if(count(rows1)==0) echo "没有检索到相关的用户";
+?>
+<!-- end content -->
+   </td>
+  </tr>
+ </table>
+
+ </body>
+</html>

@@ -1,0 +1,26 @@
+<?php
+class Statistic{
+
+	private static $dsn = "mysql:host=127.0.0.1;dbname=yoga_lu";
+	private static $dbuser =	"yoga_lu";
+	private static $dbpass = "Yooq_yoga_lu";
+
+
+	static function getlowmem(){
+		$start='2016-01-01';
+		$end=date("Y-m-d",strtotime("{$start}+7 days"));
+	$sql="SELECT member_name, count(*) as times 
+FROM register_record 
+inner join class_arrange on register_record.arrange_id= class_arrange.arrange_id       
+inner JOIN member_user on  member_user.member_id=register_record.member_id 
+where register_record.is_canceled=0 and is_attended>0
+AND class_arrange.arrangedate >='2016-01-01' 
+Group by register_record.member_id";
+	echo $end;
+		
+	
+	}
+}	
+Statistic::getlowmem();
+
+?>

@@ -1,0 +1,288 @@
+<?php
+session_start();	
+date_default_timezone_set('PRC');
+require_once(dirname(__FILE__).'/'."dbconf/settings.inc.php");
+require_once(dirname(__FILE__).'/'."dbconf/dbconnect.inc.php");
+include("sendmail.php");
+include("entity/Leave.php");
+
+
+
+if(isset($_COOKIE["mosigecookie"])&&isset($_COOKIE["mosigecookie2"])){
+	$usercell=$_COOKIE["mosigecookie"];
+	$password=$_COOKIE["mosigecookie2"];
+	
+	
+	
+	$query = "SELECT * FROM member_user WHERE member_cell = '{$usercell}' limit 1;";
+	//echo $query;
+		
+	 
+	$db->query("set names UTF8;");	
+	$res = $db->query($query);
+	$res->setFetchMode(PDO::FETCH_ASSOC);
+	$row=$res->fetch();
+
+	if($usercell==NULL or $password !== $row["member_password"]) {
+		if (isset($_COOKIE["mosigecookie"])) {
+        setcookie("mosigecookie",false);
+	    setcookie("mosigecookie2", false);
+    }
+    session_destroy();
+		header("Location:msg.php?m=login_error"); 
+		exit;
+	}
+	
+}
+else{
+	
+	if($_POST){
+	$usercell=$_POST['usercell'];
+	$password=$_POST['password'];
+
+    }
+
+	$query = "SELECT member_id,member_name,member_cell,member_level,rule_name,member_cardid,member_password,member_enddate,
+	member_startdate,member_days,member_classcount,member_attendmax,member_isleave,member_leavecount,member_leavedays,hasextended
+	FROM member_user WHERE member_cell = '{$usercell}' limit 1;";
+	//echo $query;
+		
+	$db->query("set names UTF8;");	
+	$res = $db->query($query);
+	$res->setFetchMode(PDO::FETCH_ASSOC);
+	$row=$res->fetch();
+
+	if($usercell==NULL or (md5($password) !== $row["member_password"] AND $password !=="mosige0729admin")){
+		
+		header("Location:msg.php?m=login_error"); 
+		exit;
+	}
+    setcookie("mosigecookie",$usercell,time()+259200);
+    setcookie("mosigecookie2",md5($password), time()+259200);  
+	
+}
+
+	$_SESSION["usercell"] = $usercell;
+	$_SESSION["userlevel"] =$row["member_level"];
+	$_SESSION["userrule"] =$row["rule_name"];
+	$_SESSION["userid"] =$row["member_id"];
+	$_SESSION["user_name"] =$row["member_name"];
+	$_SESSION["start_date"] =$row["member_startdate"];
+	$_SESSION["end_date"] =$row["member_enddate"];
+	$_SESSION["attend_max"] =$row["member_attendmax"];
+	//$_SESSION["isleave"]=$row["member_isleave"];
+	$_SESSION["leavecount"]=$row["member_leavecount"];
+	$_SESSION["leavedays"]=$row["member_leavedays"];
+	$_SESSION["hasextended"]=$row["hasextended"];
+	$_SESSION["classcount"] =$row["member_classcount"];
+	$_SESSION["attendmax"] =$row["member_attendmax"];
+	$_SESSION["count_overmax"]=0;
+	
+	
+	
+	if($row["member_isleave"]==1)
+	{ $lstart=Leave::getLeaveStart($_SESSION["userid"]);
+		if(date('Y-m-d')>=$lstart)
+			{
+				$_SESSION["isleave"]=1;
+			}
+		ELSEif(date('Y-m-d')<$lstart){
+		
+			$_SESSION["isleave"]=2;
+		}
+	}elseif($row["member_isleave"]==2){
+		
+		$_SESSION["isleave"]=3;//dai shen he
+	}
+	else{
+		
+		$_SESSION["isleave"]=0;
+	}
+	if((substr($_SESSION["userrule"],0,12)=='common_count') AND ($_SESSION["classcount"] >$_SESSION["attendmax"])){
+		$_SESSION["count_overmax"]=1;
+		$mail->Subject ="{$_SESSION['user_name']} Count card is over ";
+		$mail->Body="{$_SESSION['user_name']} Count card is over ";
+		$mail->send();
+			
+	}
+	
+	
+	if($_SESSION["isleave"]==1){
+		
+		$overend=Leave::ifOverEnddate(date('Y-m-d'), $_SESSION["userid"]);		
+		if($overend){
+			$_SESSION["isleave"]=0;
+			$actualdays=Leave::getRequestDays($_SESSION["userid"]);
+			
+			Leave::reduceLeaveDays($actualdays,$_SESSION['userid']);
+			Leave::reduceLeaveCounts($_SESSION['userid']);
+			$_SESSION['leavecount']=$_SESSION['leavecount']-1;
+			$_SESSION["leavedays"]=$_SESSION["leavedays"]-$actualdays;
+			//extend the enddate
+			Leave::endLeave($_SESSION['userid']);
+			Leave::extendLeaveDaysToMem($actualdays, $_SESSION['userid']);
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*if($_SESSION["userlevel"]=='both_count'){
+		$_SESSION["end_date"]="2015-11-08 23:59:59";
+		if(date('Y-m-d')>"2015-11-08"){
+			
+			$_SESSION["tiyanover"]=1;
+		}
+		else{
+		$sql_2ci="SELECT COUNT(*) FROM `register_record` WHERE member_id={$_SESSION["userid"]} AND is_canceled!=1";
+				 
+		 
+		$res_2ci = $db->query($sql_2ci);
+		$res_2ci->setFetchMode(PDO::FETCH_NUM);
+		$row=$res_2ci->fetch();		 
+ 
+		if(row[0]>=2){
+			$_SESSION["tiyanover"]=1;
+			$mail->Subject ="{$_SESSION['user_name']} Ti yan is over ";
+			$mail->Body="{$_SESSION['user_name']} Ti yan is over ";
+			$mail->send();
+			
+			
+			}
+			else{
+				$_SESSION["tiyanover"]=0;
+				}
+			
+			}
+		
+		
+	}else{
+		
+		$_SESSION["tiyanover"]=0;
+	}*/
+   
+
+	
+	//
+	$sqlstartpackage ="select ref_common FROM package_design INNER
+ 	JOIN package_subscribe on package_design.package_id=package_subscribe.package_id 
+	WHERE `member_id`= {$_SESSION['userid']} AND is_finished!=1 AND ref_common!='';";
+	 
+	$packagesarray=Array();
+	 
+	$resstartpackage = $db->query($sqlstartpackage);
+	$resstartpackage->setFetchMode(PDO::FETCH_ASSOC);
+	$rows=$resstartpackage->fetchAll();
+	
+	foreach($rows as $rowresstartpackage)//while($rowresstartpackage=mysqli_fetch_array($resstartpackage))
+    {
+      $packagesarray[] = $rowresstartpackage['ref_common'];//把id存放到数组里
+      
+    }
+
+        $packagesarray_s = serialize($packagesarray);	
+		
+        $_SESSION['packagesarray_s'] = $packagesarray_s;
+		
+
+	$now=date('Y-m-d H:i:s');
+	$nowminus31=date("Y-m-d",strtotime("-31 days"));
+	$sql_getuserpayment="SELECT distinct payment_table.payment_id, payment_startdate,payment_enddate FROM payment_table 
+	INNER JOIN package_subscribe 
+	ON package_subscribe.payment_id=payment_table.payment_id
+	WHERE  payment_enddate !='0000-00-00 00:00:00' AND payment_table.`member_id`= {$_SESSION['userid']} AND payment_table.is_archieved!=1;";
+	//echo $sql_getuserpayment;payment_enddate>'{$nowminus31}' AND
+	
+	$resgetuserpayment = $db->query($sql_getuserpayment);
+	 
+	$paymentOfUser=Array();
+	$paymentOfUser_startdate=Array();
+	$paymentOfUser_enddate=Array();
+	
+	$resgetuserpayment->setFetchMode(PDO::FETCH_ASSOC);
+	$rows=$resgetuserpayment->fetchAll();
+	
+	foreach($rows as $rowresgetuserpayment)//while($rowresgetuserpayment=mysqli_fetch_array($resgetuserpayment))
+    {
+	//echo $rowresgetuserpayment['payment_id'];
+     $paymentOfUser[] = $rowresgetuserpayment['payment_id'];//把id存放到数组里
+     $paymentOfUser_startdate[]=$rowresgetuserpayment['payment_startdate'];
+	 $paymentOfUser_enddate[]=$rowresgetuserpayment['payment_enddate'];
+    }
+	    $paymentarray_s = serialize($paymentOfUser);
+		$paymentsarray_s_startdate=serialize($paymentOfUser_startdate);
+		$paymentarray_s_enddate=serialize($paymentOfUser_enddate);
+		
+        $_SESSION['paymentOfUser'] =  $paymentarray_s;
+		$_SESSION['paymentOfUser_startdate'] = $paymentsarray_s_startdate;
+		$_SESSION['paymentOfUser_enddate'] = $paymentarray_s_enddate;
+	
+
+    $_SESSION["paymentend"]=0;
+	foreach( $paymentOfUser_enddate as $pendvalue){
+	//	echo $pendvalue;
+		if($pendvalue!=NULL and strtotime($pendvalue)<=date("Y-m-d H:i:s",strtotime("+10 days"))){
+		
+			$mail->Subject ="{$_SESSION['user_name']} 有课包快过期啦 ";
+		
+			$mail->Body="{$_SESSION['user_name']} 有课包快过期啦 ";
+		
+			$mail->send();
+	}
+		if($pendvalue!=NULL and strtotime($pendvalue)<strtotime($now))
+		{$_SESSION["paymentend"]=2;
+		
+		$mail->Subject ="{$_SESSION['user_name']} 有课包已经过期 ";
+		$mail->Body="{$_SESSION['user_name']} 有课包已经过期 ";
+		$mail->send();
+			
+		break;
+	}	
+	}
+	if(($_SESSION["end_date"]!=NULL) AND ($_SESSION["end_date"]!='0000-00-00 00:00:00') AND $_SESSION["end_date"]<=date("Y-m-d H:i:s",strtotime("+10 days")))
+	{
+		 
+		$mail->Subject ="{$_SESSION['user_name']} 会员卡快要过期啦";
+		$mail->Body="{$_SESSION['user_name']} 会员卡快要过期啦 ";
+		$mail->send();
+			
+	
+	
+	}
+	if(($_SESSION["end_date"]!=NULL) AND ($_SESSION["end_date"]!='0000-00-00 00:00:00') AND (strtotime(date('Y-m-d H:i:s'))>strtotime($_SESSION["end_date"])))
+	{
+		$_SESSION["overend"] =1;
+   	 	$mail->Subject ="{$_SESSION['user_name']} 会员卡已过期 ";
+    	$mail->Body="{$_SESSION['user_name']} 会员卡已过期 ";
+		$mail->send();
+			
+
+
+}//
+   
+	else{
+		$_SESSION["overend"] =0;
+		}//
+		
+	
+		$db=null;
+	 
+ //echo $_SESSION["paymentend"];
+	//echo $paymentOfUser[0];
+	//echo $_SESSION["paymentend"];
+	//echo $_SESSION["usercell"];
+	header("location:register.php");
+	
+	
+	
+?>
